@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<nav th:fragment="navbar" class="navbar">
+    <style>
+        .mini-cart-drawer { position: fixed !important; top: 0 !important; right: -420px !important; width: 380px !important; max-width: 90vw !important; height: 100vh !important; background: #FFFFFF !important; box-shadow: -10px 0 36px rgba(45,36,30,0.15) !important; z-index: 10000 !important; transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important; display: flex !important; flex-direction: column !important; }
+        .mini-cart-drawer.open { right: 0 !important; }
+        .mini-cart-backdrop { position: fixed !important; inset: 0 !important; background: rgba(30, 22, 16, 0.5) !important; backdrop-filter: blur(3px) !important; z-index: 9999 !important; opacity: 0 !important; pointer-events: none !important; transition: opacity 0.3s ease !important; }
+        .mini-cart-backdrop.open { opacity: 1 !important; pointer-events: auto !important; }
+    </style>
+    <div class="navbar-inner">
+        <!-- Brand / Logo -->
+        <a href="/" class="brand">
+            <span class="brand-text">Melodia<span class="brand-tag">Music &amp; Instruments</span></span>
+        </a>
+
+        <!-- Main Essential Navigation Links (Desktop) -->
+        <div class="nav-links-main">
+            <a href="/products">Instruments</a>
+            <a href="/rentals">Rentals</a>
+            <a href="/offers">Offers</a>
+        </div>
+
+        <!-- Right Side Controls (Cart + Hamburger Toggle) -->
+        <div class="nav-right-controls">
+            <!-- Wishlist Button with Badge -->
+            <a th:href="@{/wishlist}" sec:authorize="isAuthenticated()" class="nav-cart-btn" title="Saved Wishlist" style="position: relative;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+                <span>Wishlist</span>
+                <span id="navWishlistBadge" th:if="${wishlistItemCount != null and wishlistItemCount > 0}"
+                      class="nav-cart-badge" style="background: #9A7B38;"
+                      th:text="${wishlistItemCount}">0</span>
+            </a>
+
+            <!-- Cart Button with Mini-Cart Drawer Trigger -->
+            <a th:href="@{/cart}" sec:authorize="isAuthenticated()" class="nav-cart-btn" title="Quick Cart View" onclick="toggleMiniCart(event)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                <span>Cart</span>
+                <span th:if="${cartItemCount != null and cartItemCount > 0}"
+                      class="nav-cart-badge"
+                      th:text="${cartItemCount}">0</span>
+            </a>
+
+            <!-- Notification Bell Icon -->
+            <a th:href="@{/notifications}" sec:authorize="isAuthenticated()" class="nav-cart-btn" style="position: relative;" title="Notifications">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span th:if="${unreadNotificationCount != null and unreadNotificationCount > 0}"
+                      style="background: #a63b2c; color: #fff; font-size: 0.68rem; font-weight: 800; border-radius: 999px; padding: 2px 6px; margin-left: 2px;"
+                      th:text="${unreadNotificationCount}">0</span>
+            </a>
+
+            <!-- Unauthenticated Quick Links -->
+            <a th:href="@{/login}" sec:authorize="!isAuthenticated()" class="btn-nav-outline">Login</a>
+            <a th:href="@{/register}" sec:authorize="!isAuthenticated()" class="btn-nav">Sign up</a>
+
+            <!-- 3-Line Hamburger Menu Toggle Button ("iri thunak") -->
+            <button type="button" class="nav-menu-toggle" id="navMenuToggle" aria-label="Toggle menu" onclick="toggleNavMenu()">
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mini-Cart Drawer Backdrop & Panel -->
+    <div class="mini-cart-backdrop" id="miniCartBackdrop" onclick="closeMiniCart()"></div>
+    <div class="mini-cart-drawer" id="miniCartDrawer">
+        <div class="mini-cart-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep, #9A7B38)" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                <strong style="font-size: 1.1rem; color: #2D241E; font-family: var(--font-display, serif);">Your Shopping Cart</strong>
+            </div>
+            <button type="button" class="mini-cart-close" onclick="closeMiniCart()">&times;</button>
+        </div>
+
+        <div class="mini-cart-body" th:if="${miniCart != null and not #lists.isEmpty(miniCart.items)}">
+            <div th:each="item : ${miniCart.items}" class="mini-cart-item">
+                <img th:if="${item.product.imageUrl}" th:src="${item.product.imageUrl}" class="mini-cart-thumb" alt="Product"/>
+                <img th:unless="${item.product.imageUrl}" src="https://images.unsplash.com/photo-1510915361894-db8b60106cb1?q=80&w=800&auto=format&fit=crop" class="mini-cart-thumb" alt="Product"/>
+                
+                <div class="mini-cart-item-details">
+                    <a th:href="@{/products/{id}(id=${item.product.id})}" class="mini-cart-item-title" th:text="${item.product.name}">Yamaha F310</a>
+                    <div class="mini-cart-item-price">
+                        <span th:text="${item.quantity} + ' &times; LKR ' + ${#numbers.formatDecimal(item.product.price, 1, 'COMMA', 0, 'POINT')}">1 x LKR 39,900</span>
+                    </div>
+                </div>
+
+                <form th:action="@{/cart/remove}" method="post" style="margin: 0;">
+                    <input type="hidden" name="productId" th:value="${item.product.id}"/>
+                    <button type="submit" class="mini-cart-remove" title="Remove">&times;</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="mini-cart-body" th:if="${miniCart == null or #lists.isEmpty(miniCart.items)}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #7C6D5D; padding: 40px 20px;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D6C8A7" stroke-width="1.5" style="margin-bottom: 12px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            <p style="margin: 0; font-size: 0.95rem;">Your cart is currently empty</p>
+            <a href="/products" style="margin-top: 14px; font-size: 0.85rem; color: var(--gold-deep, #9A7B38); font-weight: 700; text-decoration: none;">Explore Boutique Instruments &rarr;</a>
+        </div>
+
+        <div class="mini-cart-footer" th:if="${miniCart != null and not #lists.isEmpty(miniCart.items)}">
+            <div class="mini-cart-total-row">
+                <span>Subtotal Amount</span>
+                <strong style="color: #2D241E; font-size: 1.1rem;" th:text="'LKR ' + ${#numbers.formatDecimal(#aggregates.sum(miniCart.items.![subtotal]), 1, 'COMMA', 0, 'POINT')}">LKR 39,900</strong>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 14px;">
+                <a href="/cart" class="mini-cart-btn-secondary">View Full Cart</a>
+                <a href="/orders/checkout" class="mini-cart-btn-primary">Checkout Now &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side Menu Drawer Overlay Backdrop -->
+    <div class="nav-drawer-backdrop" id="navDrawerBackdrop" onclick="closeNavMenu()"></div>
+
+    <!-- Side Menu Drawer Panel -->
+    <div class="nav-drawer" id="navDrawer">
+        <div class="nav-drawer-header">
+            <div th:if="${#authorization.expression('isAuthenticated()')}" class="user-profile-badge">
+                <div class="user-avatar">
+                    <span th:text="${currentUser != null and currentUser.fullName != null and !currentUser.fullName.empty ? currentUser.fullName.substring(0,1).toUpperCase() : 'U'}">U</span>
+                </div>
+                <div class="user-info">
+                    <span class="user-greeting">Welcome back</span>
+                    <span class="user-name" th:text="${currentUser != null ? currentUser.fullName : 'User'}">User</span>
+                </div>
+            </div>
+            <div th:if="${!#authorization.expression('isAuthenticated()')}" class="user-profile-badge">
+                <div class="user-avatar">
+                    <span>M</span>
+                </div>
+                <div class="user-info">
+                    <span class="user-greeting">Welcome to</span>
+                    <span class="user-name">Melodia Music</span>
+                </div>
+            </div>
+            <button type="button" class="nav-drawer-close" onclick="closeNavMenu()" aria-label="Close menu">&times;</button>
+        </div>
+
+        <div class="nav-drawer-body">
+            <!-- Mobile Browse Section -->
+            <div class="nav-drawer-section mobile-only-section">
+                <div class="nav-drawer-heading">Browse</div>
+                <a href="/products" class="nav-drawer-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                    Instruments
+                </a>
+                <a href="/rentals" class="nav-drawer-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                    Rentals
+                </a>
+                <a href="/offers" class="nav-drawer-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                    Offers
+                </a>
+            </div>
+
+            <!-- Authenticated User Account Menu -->
+            <div th:if="${#authorization.expression('isAuthenticated()')}" class="nav-drawer-section">
+                <div class="nav-drawer-heading">My Account</div>
+                <a th:href="@{/cart}" class="nav-drawer-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                    Cart
+                    <span th:if="${cartItemCount != null and cartItemCount > 0}"
+                          class="drawer-badge" th:text="${cartItemCount}">0</span>
+                </a>
+                <a th:href="@{/wishlist}" class="nav-drawer-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                    Wishlist
+                </a>
+                <a th:href="@{/orders}" class="nav-drawer-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                    My Orders
+                </a>
+                <a th:href="@{/payment/history}" class="nav-drawer-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                    Payment History
+                </a>
+                <a th:href="@{/rentals/my}" class="nav-drawer-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    My Rentals
+                </a>
+                <a th:href="@{/reviews/my-reviews}" class="nav-drawer-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    My Reviews
+                </a>
+                <a th:href="@{/notifications}" class="nav-drawer-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    Notifications
+                    <span th:if="${unreadNotificationCount != null and unreadNotificationCount > 0}"
+                          class="drawer-badge" th:text="${unreadNotificationCount}">0</span>
+                </a>
+                <a th:href="@{/admin}" sec:authorize="hasRole('ADMIN')" class="nav-drawer-link admin-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    Admin Panel
+                    <span th:if="${unreadNotificationCount != null and unreadNotificationCount > 0}"
+                          class="drawer-badge" th:text="${unreadNotificationCount}">0</span>
+                </a>
+            </div>
+
+            <!-- Unauthenticated Options -->
+            <div th:if="${!#authorization.expression('isAuthenticated()')}" class="nav-drawer-section">
+                <div class="nav-drawer-heading">Account</div>
+                <a th:href="@{/login}" class="nav-drawer-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                    Log In
+                </a>
+                <a th:href="@{/register}" class="nav-drawer-link">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+                    Sign Up
+                </a>
+            </div>
+        </div>
+
+        <div th:if="${#authorization.expression('isAuthenticated()')}" class="nav-drawer-footer">
+            <form th:action="@{/logout}" method="post" class="drawer-logout-form">
+                <button type="submit" class="nav-drawer-logout-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    Logout
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Floating Toast Banner Element -->
+    <div id="melodiaToastBanner" style="position: fixed; bottom: 28px; right: 28px; z-index: 99999; max-width: 360px; background: #2D241E; color: #FFFFFF; border-radius: 16px; padding: 16px 20px; box-shadow: 0 12px 32px rgba(0,0,0,0.25); display: flex; align-items: flex-start; gap: 14px; transform: translateY(140px); opacity: 0; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid rgba(212, 175, 55, 0.3); pointer-events: none;">
+        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(212, 175, 55, 0.2); border: 1px solid rgba(212, 175, 55, 0.4); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #D4AF37; font-size: 1.2rem;">
+            🔔
+        </div>
+        <div style="flex-grow: 1; min-width: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span id="toastCategory" style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #D4AF37;">NEW NOTIFICATION</span>
+                <span onclick="closeMelodiaToast()" style="cursor: pointer; font-size: 1.2rem; color: #A89B8C; line-height: 1; padding: 0 4px;">&times;</span>
+            </div>
+            <p id="toastMessage" style="margin: 0 0 10px; font-size: 0.88rem; line-height: 1.4; font-weight: 500; color: #F5EFEB; word-wrap: break-word;"></p>
+            <a id="toastLink" href="/notifications" style="font-size: 0.78rem; font-weight: 700; color: #DFB967; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">View Activity &rarr;</a>
+        </div>
+    </div>
+
+    <!-- Mini-Cart & Navigation CSS & JS -->
+    <style>
+        /* Mini-Cart Drawer Styles */
+        .mini-cart-drawer {
+            position: fixed;
+            top: 0; right: -420px;
+            width: 380px; max-width: 90vw;
+            height: 100vh;
+            background: #FFFFFF;
+            box-shadow: -10px 0 36px rgba(45, 36, 30, 0.15);
+            z-index: 10000;
+            transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+        }
+        .mini-cart-drawer.open { right: 0; }
+
+        .mini-cart-backdrop {
+            position: fixed; inset: 0;
+            background: rgba(30, 22, 16, 0.5);
+            backdrop-filter: blur(3px);
+            z-index: 9999;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .mini-cart-backdrop.open { opacity: 1; pointer-events: auto; }
+
+        .mini-cart-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #EAE4D9;
+            display: flex; align-items: center; justify-content: space-between;
+            background: #FAF8F5;
+        }
+
+        .mini-cart-close {
+            background: transparent; border: none; font-size: 1.6rem; color: #6E6258; cursor: pointer; line-height: 1;
+        }
+        .mini-cart-close:hover { color: #2D241E; }
+
+        .mini-cart-body {
+            flex: 1; overflow-y: auto; padding: 20px 24px;
+        }
+
+        .mini-cart-item {
+            display: flex; align-items: center; gap: 14px; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #F0EAE1;
+        }
+        .mini-cart-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+        .mini-cart-thumb {
+            width: 60px; height: 60px; border-radius: 8px; object-fit: cover; border: 1px solid #EAE4D9; flex-shrink: 0;
+        }
+
+        .mini-cart-item-details { flex: 1; min-width: 0; }
+        .mini-cart-item-title {
+            font-weight: 700; font-size: 0.88rem; color: #2D241E; text-decoration: none; display: block;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .mini-cart-item-title:hover { color: var(--gold-deep, #9A7B38); }
+
+        .mini-cart-item-price {
+            font-size: 0.8rem; color: #6E6258; font-weight: 600; margin-top: 4px;
+        }
+
+        .mini-cart-remove {
+            background: transparent; border: none; color: #9CA3AF; font-size: 1.2rem; cursor: pointer; padding: 4px; line-height: 1;
+        }
+        .mini-cart-remove:hover { color: #DC2626; }
+
+        .mini-cart-footer {
+            padding: 20px 24px; background: #FAF8F5; border-top: 1px solid #EAE4D9;
+        }
+
+        .mini-cart-total-row {
+            display: flex; justify-content: space-between; align-items: center; font-size: 0.92rem; color: #6E6258;
+        }
+
+        .mini-cart-btn-primary {
+            flex: 1; background: linear-gradient(135deg, #DFB967 0%, #C29A38 100%); color: #1F1610; text-align: center;
+            padding: 12px 14px; border-radius: 8px; font-weight: 800; font-size: 0.82rem; text-transform: uppercase;
+            text-decoration: none; box-shadow: 0 4px 12px rgba(194, 154, 56, 0.25); transition: all 0.2s ease;
+        }
+        .mini-cart-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(194, 154, 56, 0.35); }
+
+        .mini-cart-btn-secondary {
+            flex: 1; background: #2D241E; color: #FFFFFF; text-align: center;
+            padding: 12px 14px; border-radius: 8px; font-weight: 700; font-size: 0.82rem; text-transform: uppercase;
+            text-decoration: none; transition: background 0.2s ease;
+        }
+        .mini-cart-btn-secondary:hover { background: #4A3A2F; }
+    </style>
+
+    <script>
+        function toggleMiniCart(e) {
+            if (e && window.innerWidth > 600) {
+                e.preventDefault();
+            } else if (e && window.location.pathname === '/cart') {
+                return;
+            }
+            const miniDrawer = document.getElementById('miniCartDrawer');
+            const miniBackdrop = document.getElementById('miniCartBackdrop');
+            if (miniDrawer && miniBackdrop) {
+                const isOpen = miniDrawer.classList.contains('open');
+                if (isOpen) {
+                    closeMiniCart();
+                } else {
+                    miniDrawer.classList.add('open');
+                    miniBackdrop.classList.add('open');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+        }
+
+        function closeMiniCart() {
+            const miniDrawer = document.getElementById('miniCartDrawer');
+            const miniBackdrop = document.getElementById('miniCartBackdrop');
+            if (miniDrawer && miniBackdrop) {
+                miniDrawer.classList.remove('open');
+                miniBackdrop.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+        }
+
+        function toggleNavMenu() {
+            const drawer = document.getElementById('navDrawer');
+            const backdrop = document.getElementById('navDrawerBackdrop');
+            const toggleBtn = document.getElementById('navMenuToggle');
+            if (drawer && backdrop) {
+                const isOpen = drawer.classList.contains('open');
+                if (isOpen) {
+                    closeNavMenu();
+                } else {
+                    drawer.classList.add('open');
+                    backdrop.classList.add('open');
+                    if (toggleBtn) toggleBtn.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+        }
+
+        function closeNavMenu() {
+            const drawer = document.getElementById('navDrawer');
+            const backdrop = document.getElementById('navDrawerBackdrop');
+            const toggleBtn = document.getElementById('navMenuToggle');
+            if (drawer && backdrop) {
+                drawer.classList.remove('open');
+                backdrop.classList.remove('open');
+                if (toggleBtn) toggleBtn.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Web Audio & PCM WAV Sound Chime Generator (🔔 Crystal Clear Ding-Dong!)
+        let cachedMelodiaChimeWav = null;
+
+        function getMelodiaChimeWavDataUri() {
+            if (cachedMelodiaChimeWav) return cachedMelodiaChimeWav;
+            try {
+                const sampleRate = 22050;
+                const duration = 0.55;
+                const numSamples = Math.floor(sampleRate * duration);
+                const buffer = new Uint8Array(44 + numSamples * 2);
+                const view = new DataView(buffer.buffer);
+
+                function writeString(offset, str) {
+                    for (let i = 0; i < str.length; i++) {
+                        view.setUint8(offset + i, str.charCodeAt(i));
+                    }
+                }
+                writeString(0, 'RIFF');
+                view.setUint32(4, 36 + numSamples * 2, true);
+                writeString(8, 'WAVE');
+                writeString(12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, 1, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * 2, true);
+                view.setUint16(32, 2, true);
+                view.setUint16(34, 16, true);
+                writeString(36, 'data');
+                view.setUint32(40, numSamples * 2, true);
+
+                for (let i = 0; i < numSamples; i++) {
+                    const t = i / sampleRate;
+                    let freq = 880;
+                    let env = 1;
+                    if (t < 0.2) {
+                        freq = 880;
+                        env = Math.exp(-t * 10);
+                    } else {
+                        freq = 1320;
+                        env = Math.exp(-(t - 0.2) * 8);
+                    }
+                    const s = Math.sin(2 * Math.PI * freq * t) * env * 0.6;
+                    const sampleInt = Math.max(-32768, Math.min(32767, Math.floor(s * 32767)));
+                    view.setInt16(44 + i * 2, sampleInt, true);
+                }
+
+                let binary = '';
+                const bytes = new Uint8Array(buffer.buffer);
+                for (let i = 0; i < bytes.byteLength; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                cachedMelodiaChimeWav = 'data:audio/wav;base64,' + btoa(binary);
+                return cachedMelodiaChimeWav;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function playMelodiaChimeSound() {
+            // Method 1: HTML5 Audio using synthesized PCM WAV
+            try {
+                const dataUri = getMelodiaChimeWavDataUri();
+                if (dataUri) {
+                    const audio = new Audio(dataUri);
+                    audio.volume = 0.9;
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(function() {
+                            playWebAudioChime();
+                        });
+                    }
+                    return;
+                }
+            } catch (e) {}
+
+            // Method 2: Web Audio API Oscillator Synthesis Fallback
+            playWebAudioChime();
+        }
+
+        function playWebAudioChime() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+                const now = ctx.currentTime;
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(880, now);
+                gain1.gain.setValueAtTime(0.4, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.35);
+
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(1320, now + 0.15);
+                gain2.gain.setValueAtTime(0.45, now + 0.15);
+                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start(now + 0.15);
+                osc2.stop(now + 0.55);
+            } catch (err) {}
+        }
+
+        let lastKnownUnreadCount = null;
+
+        function showMelodiaToast(category, message, link) {
+            const toast = document.getElementById('melodiaToastBanner');
+            const catEl = document.getElementById('toastCategory');
+            const msgEl = document.getElementById('toastMessage');
+            const linkEl = document.getElementById('toastLink');
+
+            if (toast && msgEl) {
+                if (catEl) catEl.textContent = category || 'NEW NOTIFICATION';
+                msgEl.textContent = message || 'You have a new update in Melodia Store.';
+                if (linkEl) linkEl.href = link || '/notifications';
+
+                toast.style.pointerEvents = 'auto';
+                toast.style.transform = 'translateY(0)';
+                toast.style.opacity = '1';
+
+                // Play notification chime sound
+                playMelodiaChimeSound();
+
+                // Auto dismiss toast after 6 seconds
+                setTimeout(closeMelodiaToast, 6000);
+            }
+        }
+
+        function closeMelodiaToast() {
+            const toast = document.getElementById('melodiaToastBanner');
+            if (toast) {
+                toast.style.transform = 'translateY(140px)';
+                toast.style.opacity = '0';
+                toast.style.pointerEvents = 'none';
+            }
+        }
+
+        // Real-time notification check
+        function pollNotificationUpdates() {
+            fetch('/notifications/api/unread-count')
+                .then(res => res.json())
+                .then(data => {
+                    if (data && typeof data.unreadCount === 'number') {
+                        const lastSeenId = sessionStorage.getItem('melodia_last_notif_id');
+                        const currentLatestId = data.latestId ? String(data.latestId) : null;
+
+                        // Trigger sound and toast if there is a new unread notification id or count increase
+                        if (currentLatestId && lastSeenId !== currentLatestId && data.unreadCount > 0) {
+                            showMelodiaToast(data.latestType, data.latestMessage, data.latestLink);
+                            sessionStorage.setItem('melodia_last_notif_id', currentLatestId);
+                        } else if (lastKnownUnreadCount !== null && data.unreadCount > lastKnownUnreadCount) {
+                            showMelodiaToast(data.latestType, data.latestMessage, data.latestLink);
+                            if (currentLatestId) sessionStorage.setItem('melodia_last_notif_id', currentLatestId);
+                        } else if (currentLatestId && !lastSeenId) {
+                            // First time initializing lastSeenId in session
+                            sessionStorage.setItem('melodia_last_notif_id', currentLatestId);
+                        }
+
+                        lastKnownUnreadCount = data.unreadCount;
+                    }
+                })
+                .catch(() => {});
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeNavMenu();
+                closeMiniCart();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initial notification check after 1 second, then poll every 6 seconds
+            setTimeout(pollNotificationUpdates, 1000);
+            setInterval(pollNotificationUpdates, 6000);
+        });
+    </script>
+</nav>
+
+
