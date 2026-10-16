@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Account - Melodia Music Store</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        body {
+            background-color: var(--cream) !important;
+        }
+
+        .auth-page-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 220px);
+            padding: 40px 20px;
+        }
+
+        .auth-card-modern {
+            width: 100%;
+            max-width: 480px;
+            background: #FFFFFF;
+            border-radius: 16px;
+            border: 1px solid #EAE5D9;
+            box-shadow: 0 16px 40px rgba(33, 21, 16, 0.08);
+            padding: 38px 36px;
+            box-sizing: border-box;
+        }
+
+        .auth-card-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .auth-logo-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 1.5px solid var(--gold);
+            background: radial-gradient(circle at 35% 30%, var(--gold-bright), var(--gold) 60%, var(--gold-deep) 100%);
+            box-shadow: inset 0 0 0 4px var(--espresso), 0 4px 12px rgba(200, 162, 75, 0.2);
+            margin-bottom: 14px;
+        }
+
+        .auth-card-title {
+            font-family: var(--font-display);
+            font-size: 1.65rem;
+            font-weight: 700;
+            color: #2D241E;
+            margin: 0 0 6px 0;
+            letter-spacing: -0.01em;
+        }
+
+        .auth-card-subtitle {
+            font-size: 0.88rem;
+            color: #7C6D5D;
+            margin: 0;
+        }
+
+        .auth-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 16px;
+        }
+
+        .auth-form-label {
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+            color: #5C4A3E;
+        }
+
+        .auth-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .auth-input-icon {
+            position: absolute;
+            left: 14px;
+            color: #9C8C7E;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .auth-input-field {
+            width: 100%;
+            background-color: #FAF8F5 !important;
+            border: 1px solid #E5DEC9 !important;
+            border-radius: 10px !important;
+            padding: 11px 14px 11px 42px !important;
+            color: #2D241E !important;
+            font-size: 0.9rem !important;
+            font-weight: 500;
+            outline: none !important;
+            transition: all 0.2s ease !important;
+            box-sizing: border-box;
+        }
+
+        .auth-input-field:focus {
+            background-color: #FFFFFF !important;
+            border-color: #C8A24B !important;
+            box-shadow: 0 0 0 4px rgba(200, 162, 75, 0.16) !important;
+        }
+
+        .auth-toggle-pwd {
+            position: absolute;
+            right: 14px;
+            background: none;
+            border: none;
+            color: #9C8C7E;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            z-index: 2;
+        }
+
+        .auth-toggle-pwd:hover {
+            color: var(--gold-deep);
+        }
+
+        .auth-primary-btn {
+            background: linear-gradient(135deg, #3a2717 0%, #211510 100%) !important;
+            color: #FAF8F5 !important;
+            font-weight: 700 !important;
+            font-size: 0.9rem !important;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            border-radius: 10px !important;
+            padding: 14px 20px !important;
+            width: 100%;
+            border: 1px solid var(--gold-deep) !important;
+            cursor: pointer;
+            transition: all 0.25s ease !important;
+            box-shadow: 0 4px 14px rgba(33, 21, 16, 0.2) !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .auth-primary-btn:hover {
+            background: linear-gradient(135deg, #4d3521 0%, #2e1d17 100%) !important;
+            border-color: var(--gold-bright) !important;
+            color: var(--gold-bright) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(33, 21, 16, 0.3) !important;
+        }
+
+        .auth-card-footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid #F5EFE6;
+            font-size: 0.88rem;
+            color: #7C6D5D;
+        }
+
+        .auth-card-footer a {
+            color: var(--gold-deep);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .auth-card-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="auth-page-wrapper">
+    <div class="auth-card-modern">
+        <div class="auth-card-header">
+            <div class="auth-logo-badge"></div>
+            <h1 class="auth-card-title">Create Account</h1>
+            <p class="auth-card-subtitle">Fill in your details below to register with Melodia</p>
+        </div>
+
+        <div class="alert alert-error" th:if="${error}" th:text="${error}" style="border-radius: 10px; margin-bottom: 18px;"></div>
+
+        <form th:action="@{/register}" method="post">
+            <!-- Full Name -->
+            <div class="auth-form-group">
+                <label class="auth-form-label" for="regFullName">Full Name *</label>
+                <div class="auth-input-wrapper">
+                    <svg class="auth-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <input type="text" id="regFullName" name="fullName" th:value="${fullName}" class="auth-input-field" required placeholder="e.g. John Doe"/>
+                </div>
+            </div>
+
+            <!-- Email -->
+            <div class="auth-form-group">
+                <label class="auth-form-label" for="regEmail">Email Address *</label>
+                <div class="auth-input-wrapper">
+                    <svg class="auth-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    <input type="email" id="regEmail" name="email" th:value="${email}" class="auth-input-field" required
+                           pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$"
+                           title="Please enter a valid email address" placeholder="you@example.com"/>
+                </div>
+            </div>
+
+            <!-- Password -->
+            <div class="auth-form-group">
+                <label class="auth-form-label" for="regPassword">Password *</label>
+                <div class="auth-input-wrapper">
+                    <svg class="auth-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <input type="password" id="regPassword" name="password" class="auth-input-field" required minlength="6" placeholder="At least 6 characters"/>
+                    <button type="button" class="auth-toggle-pwd" onclick="toggleRegPassword()" aria-label="Toggle password view">
+                        <svg id="regEyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Phone -->
+            <div class="auth-form-group">
+                <label class="auth-form-label" for="regPhone">Phone Number *</label>
+                <div class="auth-input-wrapper">
+                    <svg class="auth-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                    </svg>
+                    <input type="tel" id="regPhone" name="phone" th:value="${phone}" class="auth-input-field" required
+                           pattern="\+?[0-9\s\-]{9,15}" title="Please enter a valid phone number" placeholder="e.g. 0771234567"/>
+                </div>
+            </div>
+
+            <!-- Address -->
+            <div class="auth-form-group">
+                <label class="auth-form-label" for="regAddress">Address *</label>
+                <div class="auth-input-wrapper">
+                    <svg class="auth-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    <input type="text" id="regAddress" name="address" th:value="${address}" class="auth-input-field" required placeholder="e.g. No. 12, Main Street, Colombo"/>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="auth-primary-btn">
+                <span>Create Account</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </button>
+        </form>
+
+        <div class="auth-card-footer">
+            Already have an account? <a th:href="@{/login}">Log in here</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleRegPassword() {
+        const pwdInput = document.getElementById('regPassword');
+        const eyeIcon = document.getElementById('regEyeIcon');
+        if (pwdInput.type === 'password') {
+            pwdInput.type = 'text';
+            eyeIcon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
+        } else {
+            pwdInput.type = 'password';
+            eyeIcon.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+        }
+    }
+</script>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>
