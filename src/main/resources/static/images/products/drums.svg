@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480">
+  <defs>
+    <radialGradient id="bg5" cx="50%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#f2d9b8"/>
+      <stop offset="100%" stop-color="#c9711a"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="480" fill="url(#bg5)"/>
+  <!-- cymbal -->
+  <ellipse cx="580" cy="150" rx="110" ry="24" fill="#e7dac7" stroke="#a25813" stroke-width="4"/>
+  <rect x="575" y="150" width="10" height="90" fill="#4a2c17"/>
+  <!-- floor tom left -->
+  <rect x="150" y="260" width="120" height="110" rx="10" fill="#7a3f0f"/>
+  <ellipse cx="210" cy="260" rx="60" ry="18" fill="#f5e6d0" stroke="#4a2c17" stroke-width="4"/>
+  <!-- snare -->
+  <rect x="310" y="290" width="100" height="80" rx="8" fill="#a25813"/>
+  <ellipse cx="360" cy="290" rx="50" ry="15" fill="#f5e6d0" stroke="#4a2c17" stroke-width="4"/>
+  <!-- bass drum -->
+  <rect x="420" y="220" width="220" height="180" rx="16" fill="#241a14"/>
+  <ellipse cx="530" cy="220" rx="110" ry="26" fill="#c9711a" stroke="#4a2c17" stroke-width="4"/>
+  <circle cx="530" cy="310" r="45" fill="none" stroke="#f5e6d0" stroke-width="5"/>
+  <!-- legs -->
+  <rect x="440" y="395" width="8" height="40" fill="#241a14"/>
+  <rect x="620" y="395" width="8" height="40" fill="#241a14"/>
+</svg>
