@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480">
+  <defs>
+    <linearGradient id="bg6" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f2d9b8"/>
+      <stop offset="100%" stop-color="#c9711a"/>
+    </linearGradient>
+    <linearGradient id="brass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e8c66b"/>
+      <stop offset="100%" stop-color="#a2792a"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="480" fill="url(#bg6)"/>
+  <circle cx="150" cy="100" r="90" fill="#ffffff" opacity="0.15"/>
+  <!-- saxophone silhouette -->
+  <path d="M 360 60
+           L 380 60
+           L 410 260
+           C 460 260 500 300 500 350
+           C 500 400 460 435 415 435
+           C 375 435 345 410 338 375
+           L 360 370
+           C 366 395 388 412 415 412
+           C 445 412 470 388 470 358
+           C 470 328 445 300 410 300
+           L 360 60 Z"
+        fill="url(#brass)" stroke="#7a5a1a" stroke-width="4"/>
+  <ellipse cx="415" cy="358" rx="26" ry="26" fill="#7a5a1a"/>
+  <g fill="#7a5a1a">
+    <circle cx="392" cy="140" r="8"/>
+    <circle cx="392" cy="170" r="8"/>
+    <circle cx="392" cy="200" r="8"/>
+    <circle cx="392" cy="230" r="8"/>
+  </g>
+  <rect x="352" y="45" width="16" height="30" rx="4" fill="#7a5a1a"/>
+</svg>
