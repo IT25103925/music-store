@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied (403) - Melodia Music Store</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background-color: var(--cream, #FAF8F5) !important;
+            font-family: var(--font-body, 'Inter', sans-serif);
+        }
+        .denied-card {
+            max-width: 580px;
+            margin: 60px auto 100px;
+            background: #FFFFFF;
+            border-radius: 24px;
+            border: 1px solid #EAE4D9;
+            box-shadow: 0 10px 40px rgba(45, 36, 30, 0.08);
+            padding: 40px 32px;
+            text-align: center;
+        }
+        .denied-icon-circle {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: #FEF2F2;
+            border: 2px solid #FECACA;
+            color: #DC2626;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .denied-title {
+            font-family: var(--font-display, 'Playfair Display', serif);
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #2D241E;
+            margin: 0 0 10px 0;
+        }
+        .denied-desc {
+            font-size: 0.95rem;
+            color: #6E6258;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        .credentials-box {
+            background: #FAF8F5;
+            border: 1px solid #EAE4D9;
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: left;
+            margin-bottom: 28px;
+            font-size: 0.88rem;
+        }
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-action-main {
+            background: linear-gradient(135deg, #DFB967 0%, #C29A38 100%);
+            color: #1F1610;
+            padding: 12px 24px;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 0.88rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(194, 154, 56, 0.25);
+        }
+        .btn-action-sub {
+            background: #2D241E;
+            color: #FFFFFF;
+            padding: 12px 24px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="container page">
+    <div class="denied-card">
+        <div class="denied-icon-circle">
+            <i data-lucide="shield-alert" style="width: 36px; height: 36px;"></i>
+        </div>
+        
+        <h1 class="denied-title">Access Restricted (403 Forbidden)</h1>
+        
+        <p class="denied-desc">
+            You do not have Administrator permissions to access the Admin Control Panel (`/admin/**`).
+            <span th:if="${currentEmail != null}">Currently logged in as: <strong style="color: #2D241E;" th:text="${currentEmail}">user@example.com</strong> (Customer Role).</span>
+        </p>
+
+        <div class="credentials-box">
+            <strong style="color: #2D241E; display: block; margin-bottom: 6px;">💡 Admin Credentials for Demo / Testing:</strong>
+            <div>• <strong>Admin Email:</strong> <code style="background: #EAE4D9; padding: 2px 6px; border-radius: 4px;">admin@musicstore.lk</code></div>
+            <div style="margin-top: 4px;">• <strong>Password:</strong> <code style="background: #EAE4D9; padding: 2px 6px; border-radius: 4px;">Admin@123</code></div>
+        </div>
+
+        <div class="btn-group">
+            <form th:action="@{/logout}" method="post" style="margin: 0; display: inline-block;">
+                <button type="submit" class="btn-action-main">
+                    <i data-lucide="log-out" style="width: 16px; height: 16px;"></i> Log Out &amp; Switch Account
+                </button>
+            </form>
+            <a href="/" class="btn-action-sub">
+                <i data-lucide="home" style="width: 16px; height: 16px;"></i> Return to Store
+            </a>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+<script>
+    lucide.createIcons();
+</script>
+</body>
+</html>
