@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480">
+  <defs>
+    <radialGradient id="bgA" cx="50%" cy="38%" r="75%">
+      <stop offset="0%" stop-color="#fbf3e6"/>
+      <stop offset="100%" stop-color="#e9c99a"/>
+    </radialGradient>
+    <linearGradient id="woodA" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#e2a15c"/>
+      <stop offset="55%" stop-color="#b3702c"/>
+      <stop offset="100%" stop-color="#7a4718"/>
+    </linearGradient>
+    <linearGradient id="neckA" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#5a3821"/>
+      <stop offset="100%" stop-color="#3a2313"/>
+    </linearGradient>
+    <radialGradient id="holeA" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#4a2f1a"/>
+      <stop offset="100%" stop-color="#1a0f08"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="480" fill="url(#bgA)"/>
+  <ellipse cx="400" cy="430" rx="150" ry="22" fill="#3a2313" opacity="0.18"/>
+  <!-- headstock -->
+  <path d="M 380 34 Q 372 20 388 18 L 424 18 Q 440 20 432 34 L 424 70 L 388 70 Z" fill="url(#neckA)"/>
+  <circle cx="392" cy="30" r="4.5" fill="#e9c99a"/>
+  <circle cx="418" cy="30" r="4.5" fill="#e9c99a"/>
+  <circle cx="392" cy="52" r="4.5" fill="#e9c99a"/>
+  <circle cx="418" cy="52" r="4.5" fill="#e9c99a"/>
+  <!-- neck -->
+  <rect x="384" y="66" width="34" height="150" fill="url(#neckA)"/>
+  <g stroke="#e9c99a" stroke-width="2" opacity="0.85">
+    <line x1="384" y1="90" x2="418" y2="90"/>
+    <line x1="384" y1="112" x2="418" y2="112"/>
+    <line x1="384" y1="134" x2="418" y2="134"/>
+    <line x1="384" y1="156" x2="418" y2="156"/>
+    <line x1="384" y1="178" x2="418" y2="178"/>
+  </g>
+  <g fill="#f4e6cf" opacity="0.9">
+    <rect x="390.5" y="66" width="1.6" height="150"/>
+    <rect x="399.5" y="66" width="1.6" height="150"/>
+    <rect x="408.5" y="66" width="1.6" height="150"/>
+  </g>
+  <!-- body -->
+  <path d="M 401 205
+           C 330 205 268 240 262 300
+           C 258 335 278 355 296 382
+           C 316 412 350 438 401 438
+           C 452 438 486 412 506 382
+           C 524 355 544 335 540 300
+           C 534 240 472 205 401 205 Z"
+        fill="url(#woodA)" stroke="#5a3413" stroke-width="3"/>
+  <path d="M 401 205 C 350 205 305 225 285 258 C 340 240 465 240 517 258 C 497 225 452 205 401 205 Z" fill="#ffffff" opacity="0.10"/>
+  <ellipse cx="401" cy="308" rx="58" ry="58" fill="#c98a3f"/>
+  <ellipse cx="401" cy="308" rx="50" ry="50" fill="url(#holeA)"/>
+  <ellipse cx="401" cy="308" rx="63" ry="63" fill="none" stroke="#3a2313" stroke-width="3"/>
+  <rect x="374" y="368" width="54" height="16" rx="3" fill="#241a14"/>
+  <ellipse cx="330" cy="270" rx="26" ry="40" fill="#ffffff" opacity="0.12"/>
+</svg>
