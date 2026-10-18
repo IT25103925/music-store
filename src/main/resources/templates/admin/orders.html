@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Sales Orders - Admin Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Status Pills */
+        .status-pill.status-PENDING { background: #FEF3C7; color: #92400E; }
+        .status-pill.status-CONFIRMED { background: #EFF6FF; color: #1E40AF; }
+        .status-pill.status-SHIPPED { background: #F3E8FF; color: #6B21A8; }
+        .status-pill.status-DELIVERED { background: #ECFDF5; color: #065F46; }
+        .status-pill.status-CANCELLED { background: #FEF2F2; color: #991B1B; }
+
+        .btn-action-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid #EAE4D9;
+            background: #FFFFFF;
+            color: #4A3E35;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-action-icon:hover {
+            border-color: var(--gold-deep);
+            color: var(--gold-deep);
+            background: #FAF8F5;
+            transform: translateY(-1px);
+        }
+
+        /* Modal Overlays */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s ease;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-container {
+            background: #FFFFFF;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 680px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.22);
+            border: 1px solid #E2E8F0;
+            overflow: hidden;
+            transform: scale(0.95) translateY(10px);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-overlay.active .modal-container {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header-custom {
+            background: #FAF8F5;
+            border-bottom: 1px solid #EAE4D9;
+            padding: 22px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-order-id {
+            font-family: var(--font-display, 'Playfair Display', Georgia, serif);
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #2D241E;
+        }
+
+        .modal-close-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            border: 1px solid #EAE4D9;
+            color: #64748B;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close-btn:hover {
+            background: #EF4444;
+            color: #FFFFFF;
+            border-color: #EF4444;
+        }
+
+        .modal-body-custom {
+            padding: 28px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .modal-customer-box {
+            background: #F8FAFC;
+            border-radius: 16px;
+            border: 1px solid #E2E8F0;
+            padding: 20px 24px;
+        }
+
+        .cust-header-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px dashed #E2E8F0;
+        }
+
+        .cust-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--espresso, #2D241E);
+            color: var(--gold-bright, #E5C158);
+            font-weight: 800;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cust-details-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0F172A;
+            margin: 0 0 2px 0;
+        }
+
+        .cust-details-email {
+            font-size: 0.84rem;
+            color: #64748B;
+        }
+
+        .cust-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .info-cell {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.88rem;
+            color: #334155;
+            line-height: 1.4;
+        }
+
+        .info-cell i {
+            color: var(--gold-deep, #9A7B38);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .modal-section-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            color: #64748B;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .modal-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #FFFFFF;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            overflow: hidden;
+        }
+
+        .modal-items-table th {
+            background: #F1F5F9;
+            color: #475569;
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+            padding: 10px 14px;
+            text-align: left;
+        }
+
+        .modal-items-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #F1F5F9;
+            font-size: 0.88rem;
+            color: #1E293B;
+            vertical-align: middle;
+        }
+
+        .modal-items-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .modal-item-flex {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-item-thumb {
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+        }
+
+        .modal-pricing-card {
+            background: #FAF8F5;
+            border-radius: 16px;
+            border: 1px solid #EAE4D9;
+            padding: 20px 24px;
+        }
+
+        .pricing-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #64748B;
+            margin-bottom: 8px;
+        }
+
+        .pricing-line.discount {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .pricing-line.grand-total {
+            border-top: 2px solid #E2E8F0;
+            padding-top: 12px;
+            margin-top: 10px;
+            margin-bottom: 0;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #0F172A;
+        }
+
+        .modal-footer-custom {
+            background: #FFFFFF;
+            border-top: 1px solid #E2E8F0;
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-modal-invoice {
+            background: var(--gold-deep, #9A7B38);
+            color: #FFFFFF !important;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-modal-invoice:hover {
+            background: #7F642C;
+        }
+
+        .btn-modal-close {
+            background: #F1F5F9;
+            color: #475569;
+            border: 1px solid #CBD5E1;
+            padding: 10px 20px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-modal-close:hover {
+            background: #E2E8F0;
+            color: #0F172A;
+        }
+    </style>
+</head>
+<body class="admin-body">
+
+<!-- Topbar Header -->
+<header class="admin-topbar">
+    <div class="topbar-inner">
+        <div class="topbar-left">
+            <a th:href="@{/admin/dashboard}" class="admin-brand">
+                <span class="admin-logo-mark">M</span>
+                <div class="admin-brand-text">
+                    <span class="brand-name">Melodia Admin</span>
+                    <span class="brand-sub">Store Control Center</span>
+                </div>
+            </a>
+            <span class="system-status-pill">
+                <span class="status-pulse"></span>
+                System Operational
+            </span>
+        </div>
+
+        <div class="topbar-right">
+            <a th:href="@{/notifications}" class="topbar-link" title="Notifications" style="position: relative; display: inline-flex; align-items: center; gap: 6px;">
+                <i data-lucide="bell"></i> Notifications
+                <span th:if="${unreadNotificationCount != null and unreadNotificationCount > 0}"
+                      style="background: #a63b2c; color: #ffffff; font-size: 0.7rem; font-weight: 800; border-radius: 999px; padding: 1px 6px; min-width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center;"
+                      th:text="${unreadNotificationCount}">0</span>
+            </a>
+            <a th:href="@{/}" target="_blank" class="topbar-link">
+                <i data-lucide="external-link"></i> View Customer Store
+            </a>
+            <div class="admin-user-profile">
+                <div class="admin-avatar" th:text="${currentUser != null and currentUser.fullName != null and !currentUser.fullName.empty ? currentUser.fullName.substring(0,1).toUpperCase() : 'A'}">A</div>
+                <div class="admin-user-info">
+                    <span class="admin-user-name" th:text="${currentUser != null ? currentUser.fullName : 'System Admin'}">System Admin</span>
+                    <span class="admin-user-role">Administrator</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="container page-wrapper">
+    
+    <!-- Navigation Tabs -->
+    <div class="admin-nav-tabs">
+        <a th:href="@{/admin/dashboard}" class="tab-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+        <a th:href="@{/admin/products}" class="tab-link"><i data-lucide="box"></i> Inventory</a>
+        <a th:href="@{/admin/orders}" class="tab-link active"><i data-lucide="shopping-cart"></i> Orders</a>
+        <a th:href="@{/admin/payments}" class="tab-link"><i data-lucide="credit-card"></i> Payments</a>
+        <a th:href="@{/admin/rentals}" class="tab-link"><i data-lucide="music"></i> Rentals</a>
+        <a th:href="@{/admin/offers}" class="tab-link"><i data-lucide="tag"></i> Offers</a>
+        <a th:href="@{/admin/reviews}" class="tab-link"><i data-lucide="star"></i> Reviews</a>
+        <a th:href="@{/notifications}" class="tab-link" style="margin-left: auto; background: rgba(200, 162, 75, 0.12); border: 1px solid var(--gold-deep, #9c7a2f);">
+            <i data-lucide="bell"></i> Notifications
+            <span th:if="${unreadNotificationCount != null and unreadNotificationCount > 0}"
+                  class="drawer-badge" style="background: #a63b2c; color: white; padding: 2px 7px; border-radius: 99px; font-size: 0.72rem; font-weight: 700; margin-left: 4px;"
+                  th:text="${unreadNotificationCount}">0</span>
+        </a>
+    </div>
+
+    <!-- Prominent Module Hero Banner -->
+    <div class="admin-module-banner m2" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div class="banner-content-left">
+            <span class="banner-member-badge m2"><i data-lucide="user"></i> MEMBER 2 MODULE • ORDER MANAGEMENT</span>
+            <h1 class="banner-title">🛒 Sales Orders & Order Processing Hub</h1>
+            <p class="banner-subtitle">Track customer checkout orders, manage order fulfillment statuses (Pending, Confirmed, Shipped, Delivered), and view invoices.</p>
+        </div>
+        <a th:href="@{/admin/orders/export-csv}" class="btn-primary" style="background: #10B981; color: #ffffff;">
+            <i data-lucide="download"></i> Export CSV Report
+        </a>
+    </div>
+
+    <!-- KPI Summary Grid -->
+    <div class="metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="metric-card" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 18px; backdrop-filter: blur(8px);">
+            <span style="font-size: 0.75rem; color: #34d399; text-transform: uppercase; font-weight: 700; letter-spacing: 0.06em;">Gross Revenue</span>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #34d399; margin-top: 4px;"
+                th:text="'LKR ' + ${#numbers.formatDecimal(totalRevenue != null ? totalRevenue : 0, 1, 'COMMA', 2, 'POINT')}">LKR 0.00</div>
+        </div>
+        <div class="metric-card" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 18px; backdrop-filter: blur(8px);">
+            <span style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.06em;">Total Orders</span>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #f8fafc; margin-top: 4px;"
+                th:text="${totalOrdersCount}">0</div>
+        </div>
+        <div class="metric-card" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 18px; backdrop-filter: blur(8px);">
+            <span style="font-size: 0.75rem; color: #fbbf24; text-transform: uppercase; font-weight: 700; letter-spacing: 0.06em;">Pending Orders</span>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #fbbf24; margin-top: 4px;"
+                th:text="${pendingCount}">0</div>
+        </div>
+        <div class="metric-card" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 18px; backdrop-filter: blur(8px);">
+            <span style="font-size: 0.75rem; color: #60a5fa; text-transform: uppercase; font-weight: 700; letter-spacing: 0.06em;">Delivered Orders</span>
+            <div style="font-size: 1.8rem; font-weight: 800; color: #60a5fa; margin-top: 4px;"
+                th:text="${deliveredCount}">0</div>
+        </div>
+    </div>
+
+    <!-- Data Table Container -->
+    <div class="boutique-table-wrapper reveal in-view">
+        
+        <!-- Table Toolbar -->
+        <div class="table-toolbar">
+            <div class="search-input-wrapper">
+                <i data-lucide="search"></i>
+                <input type="text" id="orderSearchInput" class="search-input" placeholder="Search by Order ID, Customer Name, Email, or Phone...">
+            </div>
+            <div class="filters-wrapper" style="display: flex; gap: 10px; align-items: center;">
+                <select id="statusFilterSelect" class="filter-select">
+                    <option value="ALL">All Statuses</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="CONFIRMED">Confirmed</option>
+                    <option value="SHIPPED">Shipped</option>
+                    <option value="DELIVERED">Delivered</option>
+                    <option value="CANCELLED">Cancelled</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="ordersTable">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Customer Info</th>
+                    <th>Date Placed</th>
+                    <th class="price-header">Order Total</th>
+                    <th>Status</th>
+                    <th>Tracking #</th>
+                    <th style="text-align: right;">Fulfillment & Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            <tr th:each="o : ${orders}" class="order-row" th:data-status="${o.status}">
+                <td>
+                    <span class="order-id" th:text="'#ORD-' + ${#numbers.formatInteger(o.id, 4)}">#ORD-0001</span>
+                </td>
+                <td>
+                    <div class="customer-cell">
+                        <span class="customer-name" th:text="${o.user != null ? o.user.fullName : 'Guest'}">Customer Name</span>
+                        <span class="customer-email" th:text="${o.user != null ? o.user.email : ''}">email@example.com</span>
+                    </div>
+                </td>
+                <td class="date-cell" th:text="${#temporals.format(o.orderDate, 'dd MMM yyyy, HH:mm')}">Date</td>
+                <td class="price-cell" style="font-weight: 800; color: #2D241E;" th:text="'LKR ' + ${#numbers.formatDecimal(o.totalAmount, 1, 'COMMA', 2, 'POINT')}">Total</td>
+                <td>
+                    <span class="status-pill" th:classappend="'status-' + ${o.status}">
+                        <span class="status-dot"></span>
+                        <span th:text="${o.status}">Status</span>
+                    </span>
+                    <div th:if="${not #strings.isEmpty(o.orderNotes)}" style="margin-top: 6px; padding: 6px 10px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; font-size: 0.78rem; color: #92400E; max-width: 220px; line-height: 1.4;">
+                        <strong style="display: block; font-size: 0.7rem; text-transform: uppercase; color: #B45309;"><i data-lucide="message-square" style="width: 12px; height: 12px; display: inline-block; vertical-align: middle;"></i> Reason / Note:</strong>
+                        <span th:text="${o.orderNotes}">Customer Reason</span>
+                    </div>
+                </td>
+                <td>
+                    <form th:action="@{/admin/orders/{id}/tracking(id=${o.id})}" method="post" style="display:inline-flex; align-items:center; gap:4px;">
+                        <input type="text" name="trackingNumber" th:value="${o.trackingNumber}" placeholder="Pronto ID..." style="width:105px; padding:6px 8px; border:1px solid #CBD5E1; border-radius:8px; font-size:0.78rem; font-family:monospace; background:#FFFFFF;" title="Enter Courier Tracking ID"/>
+                        <button type="submit" class="btn-action-icon" style="width:30px; height:30px; padding:0; flex-shrink:0;" title="Save Courier Tracking ID">
+                            <i data-lucide="check" style="width:14px; height:14px;"></i>
+                        </button>
+                    </form>
+                </td>
+                <td class="actions-cell" style="justify-content: flex-end; gap: 8px;">
+                    <form th:if="${o.status.name() == 'PENDING'}" th:action="@{/admin/orders/{id}/status(id=${o.id})}" method="post" style="display:inline-block;">
+                        <input type="hidden" name="status" value="CONFIRMED"/>
+                        <button type="submit" style="background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; font-size: 0.76rem; font-weight: 800; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Quick Confirm Order">
+                            Confirm Order ✓
+                        </button>
+                    </form>
+                    <form th:if="${o.status.name() == 'CONFIRMED'}" th:action="@{/admin/orders/{id}/status(id=${o.id})}" method="post" style="display:inline-block;">
+                        <input type="hidden" name="status" value="SHIPPED"/>
+                        <button type="submit" style="background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF; font-size: 0.76rem; font-weight: 800; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Quick Dispatch / Ship Order">
+                            Dispatch 🚚
+                        </button>
+                    </form>
+                    <form th:if="${o.status.name() == 'SHIPPED'}" th:action="@{/admin/orders/{id}/status(id=${o.id})}" method="post" style="display:inline-block;">
+                        <input type="hidden" name="status" value="DELIVERED"/>
+                        <button type="submit" style="background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; font-size: 0.76rem; font-weight: 800; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Mark Order as Delivered">
+                            Delivered 🎉
+                        </button>
+                    </form>
+                    <form th:if="${o.status.name() == 'CANCEL_REQUESTED' or o.status.name() == 'RETURN_REQUESTED'}" th:action="@{/admin/orders/{id}/status(id=${o.id})}" method="post" style="display:inline-block;">
+                        <input type="hidden" name="status" value="CANCELLED"/>
+                        <button type="submit" style="background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; font-size: 0.76rem; font-weight: 800; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Approve Refund & Cancel Order">
+                            Approve Cancel ❌
+                        </button>
+                    </form>
+
+                    <form th:action="@{/admin/orders/{id}/status(id=${o.id})}" method="post" style="display:inline-block;">
+                        <select name="status" class="inline-status-select" onchange="this.form.submit()" title="Change Status">
+                            <option th:each="s : ${T(com.sliit.musicstore.entity.Order.OrderStatus).values()}"
+                                    th:value="${s}" th:text="${s}" th:selected="${s == o.status}"></option>
+                        </select>
+                    </form>
+
+                    <a th:href="@{/orders/{id}/invoice(id=${o.id})}" target="_blank" class="btn-action-icon" title="Print Tax Invoice">
+                        <i data-lucide="printer" style="width: 16px; height: 16px;"></i>
+                    </a>
+
+                    <a th:href="@{/admin/orders/{id}/shipping-label(id=${o.id})}" target="_blank" class="btn-action-icon" style="background:#FFFDF7; color:#9A7B38; border-color:rgba(154,123,56,0.4);" title="Print Courier Waybill Shipping Label">
+                        <i data-lucide="truck" style="width: 16px; height: 16px;"></i>
+                    </a>
+                    
+                    <button type="button" class="btn-action-icon view-details-btn" 
+                            th:data-id="${o.id}" 
+                            th:data-name="${o.user != null ? o.user.fullName : 'Guest'}"
+                            th:data-email="${o.user != null ? o.user.email : ''}"
+                            th:data-address="${o.shippingAddress}"
+                            th:data-phone="${o.contactPhone}"
+                            th:data-notes="${o.orderNotes}"
+                            th:data-tracking="${o.trackingNumber}"
+                            th:data-status="${o.status}"
+                            th:data-date="${#temporals.format(o.orderDate, 'dd MMM yyyy, HH:mm')}"
+                            th:data-subtotal="${#numbers.formatDecimal(o.subtotal, 1, 'COMMA', 2, 'POINT')}"
+                            th:data-offer="${o.appliedOfferCode}"
+                            th:data-discount="${o.discountAmount != null ? #numbers.formatDecimal(o.discountAmount, 1, 'COMMA', 2, 'POINT') : '0.00'}"
+                            th:data-total="${#numbers.formatDecimal(o.totalAmount, 1, 'COMMA', 2, 'POINT')}"
+                            th:data-invoice-url="@{/orders/{id}/invoice(id=${o.id})}"
+                            title="View Detailed Modal">
+                        <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                    </button>
+
+                    <div class="row-items-data" style="display: none;">
+                        <span th:each="item : ${o.items}"
+                              th:data-title="${item.product != null ? item.product.name : 'Product'}"
+                              th:data-brand="${item.product != null ? item.product.brand : 'Melodia'}"
+                              th:data-img="${item.product != null ? item.product.imageUrl : ''}"
+                              th:data-qty="${item.quantity}"
+                              th:data-price="${#numbers.formatDecimal(item.unitPrice, 1, 'COMMA', 2, 'POINT')}"
+                              th:data-subtotal="${#numbers.formatDecimal(item.subtotal, 1, 'COMMA', 2, 'POINT')}"></span>
+                    </div>
+                </td>
+            </tr>
+            <tr id="noResultsRow" style="display: none;">
+                <td colspan="7" style="text-align: center; padding: 40px; color: #7C6D5D;">
+                    No orders matched your search or status filter criteria.
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- Modal Overlay -->
+<div class="modal-overlay" id="orderModal">
+    <div class="modal-container">
+        <div class="modal-header-custom">
+            <div class="modal-header-left">
+                <span class="modal-order-id" id="modalTitle">Order #ORD-0000</span>
+                <span class="status-pill" id="modalStatusBadge">PENDING</span>
+            </div>
+            <button class="modal-close-btn" id="closeModal" title="Close"><i data-lucide="x" style="width: 18px; height: 18px;"></i></button>
+        </div>
+
+        <div class="modal-body-custom">
+            <div class="modal-customer-box">
+                <div class="cust-header-row">
+                    <div class="cust-avatar" id="modalAvatar">D</div>
+                    <div>
+                        <div class="cust-details-name" id="modalName">Customer Name</div>
+                        <div class="cust-details-email" id="modalEmail">email@example.com</div>
+                    </div>
+                </div>
+
+                <div class="cust-info-grid">
+                    <div class="info-cell">
+                        <i data-lucide="map-pin" style="width: 18px; height: 18px;"></i>
+                        <div>
+                            <strong style="color: #64748B; font-size: 0.76rem; text-transform: uppercase; display: block; margin-bottom: 2px;">Shipping Address</strong>
+                            <span id="modalAddress">Address text</span>
+                        </div>
+                    </div>
+                    <div class="info-cell">
+                        <i data-lucide="phone" style="width: 18px; height: 18px;"></i>
+                        <div>
+                            <strong style="color: #64748B; font-size: 0.76rem; text-transform: uppercase; display: block; margin-bottom: 2px;">Contact Phone</strong>
+                            <span id="modalPhone">0771234567</span>
+                        </div>
+                    </div>
+                    <div class="info-cell" id="modalNotesBox" style="grid-column: span 2; display: none; background: #FFFBEB; border: 1px solid #FDE68A; padding: 10px; border-radius: 8px;">
+                        <i data-lucide="file-text" style="width: 18px; height: 18px; color: #D97706;"></i>
+                        <div>
+                            <strong style="color: #92400E; font-size: 0.76rem; text-transform: uppercase; display: block; margin-bottom: 2px;">Customer Delivery Notes</strong>
+                            <span id="modalNotes" style="color: #92400E;">Notes text</span>
+                        </div>
+                    </div>
+                    <div class="info-cell" id="modalTrackingBox" style="grid-column: span 2; display: none; background: #FAF5FF; border: 1px solid #E9D5FF; padding: 10px; border-radius: 8px;">
+                        <i data-lucide="truck" style="width: 18px; height: 18px; color: #6B21A8;"></i>
+                        <div>
+                            <strong style="color: #6B21A8; font-size: 0.76rem; text-transform: uppercase; display: block; margin-bottom: 2px;">Courier Tracking ID</strong>
+                            <span id="modalTracking" style="color: #6B21A8; font-family: monospace; font-weight: 700;">Tracking ID</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="modal-section-title"><i data-lucide="package" style="width: 16px; height: 16px;"></i> Order Items Breakdown</div>
+                <table class="modal-items-table">
+                    <thead>
+                        <tr>
+                            <th>Item Description</th>
+                            <th style="text-align: center;">Qty</th>
+                            <th style="text-align: right;">Price</th>
+                            <th style="text-align: right;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalItemsBody"></tbody>
+                </table>
+            </div>
+
+            <div class="modal-pricing-card">
+                <div class="pricing-line">
+                    <span>Items Subtotal:</span>
+                    <span id="modalSubtotal">LKR 0.00</span>
+                </div>
+                <div class="pricing-line discount" id="modalDiscountRow" style="display: none;">
+                    <span>Offer Coupon (<span id="modalOfferCode">OFFER</span>):</span>
+                    <span id="modalDiscountVal">- LKR 0.00</span>
+                </div>
+                <div class="pricing-line">
+                    <span>Delivery Shipping:</span>
+                    <span style="color: #059669; font-weight: 700;">FREE</span>
+                </div>
+                <div class="pricing-line grand-total">
+                    <span>Grand Total:</span>
+                    <span id="modalTotal" style="color: #059669;">LKR 0.00</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="modal-footer-custom">
+            <a id="modalInvoiceBtn" href="#" target="_blank" class="btn-modal-invoice">
+                <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Print Official Invoice
+            </a>
+            <button class="btn-modal-close" id="closeModalFooter">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const modal = document.getElementById('orderModal');
+        const closeBtn = document.getElementById('closeModal');
+        const closeModalFooter = document.getElementById('closeModalFooter');
+        const viewBtns = document.querySelectorAll('.view-details-btn');
+
+        viewBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const dataset = this.dataset;
+                const row = this.closest('tr');
+                
+                document.getElementById('modalTitle').textContent = 'Order #ORD-' + String(dataset.id).padStart(4, '0');
+                
+                const statusBadge = document.getElementById('modalStatusBadge');
+                statusBadge.textContent = dataset.status || 'PENDING';
+                statusBadge.className = 'status-pill status-' + (dataset.status || 'PENDING');
+                
+                const name = dataset.name || 'Guest';
+                document.getElementById('modalName').textContent = name;
+                document.getElementById('modalEmail').textContent = dataset.email || 'N/A';
+                document.getElementById('modalAvatar').textContent = name.charAt(0).toUpperCase();
+                document.getElementById('modalAddress').textContent = dataset.address || 'N/A';
+                document.getElementById('modalPhone').textContent = dataset.phone || 'N/A';
+
+                const notesBox = document.getElementById('modalNotesBox');
+                if (dataset.notes && dataset.notes.trim() !== '' && dataset.notes !== 'null') {
+                    document.getElementById('modalNotes').textContent = dataset.notes;
+                    notesBox.style.display = 'flex';
+                } else {
+                    notesBox.style.display = 'none';
+                }
+
+                const trackingBox = document.getElementById('modalTrackingBox');
+                if (dataset.tracking && dataset.tracking.trim() !== '' && dataset.tracking !== 'null') {
+                    document.getElementById('modalTracking').textContent = dataset.tracking;
+                    trackingBox.style.display = 'flex';
+                } else {
+                    trackingBox.style.display = 'none';
+                }
+
+                document.getElementById('modalInvoiceBtn').href = dataset.invoiceUrl || '#';
+
+                const itemsBody = document.getElementById('modalItemsBody');
+                itemsBody.innerHTML = '';
+                const itemSpans = row.querySelectorAll('.row-items-data span');
+
+                if (itemSpans.length > 0) {
+                    itemSpans.forEach(item => {
+                        const tr = document.createElement('tr');
+                        const img = item.dataset.img ? `<img src="${item.dataset.img}" class="modal-item-thumb" alt="Product"/>` : `<div class="modal-item-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--gold-deep);font-size:1.1rem;">🎵</div>`;
+                        
+                        tr.innerHTML = `
+                            <td>
+                                <div class="modal-item-flex">
+                                    ${img}
+                                    <div>
+                                        <span style="font-size: 0.72rem; text-transform: uppercase; color: #64748B; font-weight: 600; display: block;">${item.dataset.brand || 'Melodia'}</span>
+                                        <span style="font-weight: 700; color: #0F172A;">${item.dataset.title || 'Product'}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="text-align: center; font-weight: 700;">x${item.dataset.qty || '1'}</td>
+                            <td style="text-align: right;">LKR ${item.dataset.price || '0.00'}</td>
+                            <td style="text-align: right; font-weight: 700; color: #0F172A;">LKR ${item.dataset.subtotal || '0.00'}</td>
+                        `;
+                        itemsBody.appendChild(tr);
+                    });
+                } else {
+                    itemsBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94A3B8; padding: 16px;">No item details available.</td></tr>`;
+                }
+
+                document.getElementById('modalSubtotal').textContent = 'LKR ' + (dataset.subtotal || dataset.total || '0.00');
+                
+                const discountRow = document.getElementById('modalDiscountRow');
+                if (dataset.offer && dataset.offer !== 'null' && dataset.offer !== 'None') {
+                    document.getElementById('modalOfferCode').textContent = dataset.offer;
+                    document.getElementById('modalDiscountVal').textContent = '- LKR ' + (dataset.discount || '0.00');
+                    discountRow.style.display = 'flex';
+                } else {
+                    discountRow.style.display = 'none';
+                }
+
+                document.getElementById('modalTotal').textContent = 'LKR ' + (dataset.total || '0.00');
+
+                modal.classList.add('active');
+                lucide.createIcons();
+            });
+        });
+
+        const hideModal = () => modal.classList.remove('active');
+        if (closeBtn) closeBtn.addEventListener('click', hideModal);
+        if (closeModalFooter) closeModalFooter.addEventListener('click', hideModal);
+        modal.addEventListener('click', (e) => {
+            if(e.target === modal) hideModal();
+        });
+
+        const searchInput = document.getElementById('orderSearchInput');
+        const filterSelect = document.getElementById('statusFilterSelect');
+        const rows = document.querySelectorAll('.order-row');
+        const noResults = document.getElementById('noResultsRow');
+
+        function filterOrders() {
+            const query = searchInput.value.toLowerCase().trim();
+            const selectedStatus = filterSelect.value.toUpperCase();
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const status = row.getAttribute('data-status') || '';
+                
+                const matchesSearch = !query || text.includes(query);
+                const matchesStatus = (selectedStatus === 'ALL') || (status === selectedStatus);
+
+                if (matchesSearch && matchesStatus) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (noResults) {
+                noResults.style.display = (visibleCount === 0) ? '' : 'none';
+            }
+        }
+
+        if (searchInput) searchInput.addEventListener('input', filterOrders);
+        if (filterSelect) filterSelect.addEventListener('change', filterOrders);
+    });
+</script>
+</body>
+</html>

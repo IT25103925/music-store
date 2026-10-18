@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Order #' + ${#numbers.formatInteger(order.id, 4)} + ' - Melodia'">Order Details</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background-color: var(--cream, #FAF8F5) !important;
+            font-family: var(--font-body, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
+        }
+
+        .detail-container {
+            max-width: 1040px;
+            margin: 36px auto 80px;
+            padding: 0 20px;
+        }
+
+        /* Top Header & Breadcrumb */
+        .detail-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .order-title-group {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .order-title-text {
+            font-family: var(--font-display, 'Playfair Display', Georgia, serif);
+            font-size: 2rem;
+            font-weight: 800;
+            color: #2D241E;
+        }
+
+        .order-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .order-status-badge.status-PENDING { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+        .order-status-badge.status-CONFIRMED { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
+        .order-status-badge.status-SHIPPED { background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF; }
+        .order-status-badge.status-DELIVERED { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
+        .order-status-badge.status-CANCELLED { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+
+        /* Order Status Stepper Bar */
+        .stepper-card {
+            background: #FFFFFF;
+            border-radius: 20px;
+            border: 1px solid #EAE4D9;
+            box-shadow: 0 8px 30px rgba(45, 36, 30, 0.05);
+            padding: 32px;
+            margin-bottom: 32px;
+        }
+
+        .stepper-heading {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-weight: 700;
+            color: #7C6D5D;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stepper-track {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .stepper-track::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 40px;
+            right: 40px;
+            height: 4px;
+            background: #E2E8F0;
+            z-index: 1;
+        }
+
+        .stepper-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            flex: 1;
+        }
+
+        .step-icon-circle {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            border: 3px solid #CBD5E1;
+            color: #94A3B8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .step-label {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #64748B;
+            margin-bottom: 4px;
+        }
+
+        .step-desc {
+            font-size: 0.76rem;
+            color: #94A3B8;
+        }
+
+        /* Stepper Active States */
+        .stepper-step.completed .step-icon-circle {
+            background: #10B981;
+            border-color: #10B981;
+            color: #FFFFFF;
+        }
+        .stepper-step.completed .step-label { color: #065F46; }
+
+        .stepper-step.active .step-icon-circle {
+            background: var(--gold-deep, #9A7B38);
+            border-color: var(--gold-deep, #9A7B38);
+            color: #FFFFFF;
+            box-shadow: 0 0 0 5px rgba(154, 123, 56, 0.2);
+        }
+        .stepper-step.active .step-label { color: var(--gold-deep, #9A7B38); }
+
+        /* Grid Layout */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 28px;
+        }
+
+        @media (max-width: 860px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Items Section */
+        .items-card {
+            background: #FFFFFF;
+            border-radius: 20px;
+            border: 1px solid #EAE4D9;
+            box-shadow: 0 8px 30px rgba(45, 36, 30, 0.05);
+            padding: 28px;
+        }
+
+        .card-title-head {
+            font-family: var(--font-display, serif);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2D241E;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #F0EAE1;
+            padding-bottom: 14px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .items-table th {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #7C6D5D;
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 1px solid #F0EAE1;
+        }
+
+        .items-table td {
+            padding: 16px 14px;
+            border-bottom: 1px solid #F8F6F0;
+            font-size: 0.92rem;
+            color: #2D241E;
+        }
+
+        .items-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .item-flex {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .item-thumb {
+            width: 52px;
+            height: 52px;
+            border-radius: 10px;
+            object-fit: cover;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+        }
+
+        /* Side Info Cards */
+        .side-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .side-card {
+            background: #FFFFFF;
+            border-radius: 20px;
+            border: 1px solid #EAE4D9;
+            box-shadow: 0 8px 30px rgba(45, 36, 30, 0.05);
+            padding: 24px;
+        }
+
+        .side-card-title {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            color: #7C6D5D;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-row {
+            font-size: 0.9rem;
+            color: #4A3E35;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .pricing-summary-box {
+            background: #FAF8F5;
+            border-radius: 12px;
+            padding: 16px 18px;
+            border: 1px solid #EAE4D9;
+        }
+
+        .summary-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #6E6258;
+            margin-bottom: 8px;
+        }
+
+        .summary-line.total-line {
+            border-top: 1px solid #EAE4D9;
+            padding-top: 10px;
+            margin-top: 8px;
+            margin-bottom: 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #2D241E;
+        }
+
+        .btn-invoice-full {
+            width: 100%;
+            background: var(--gold-deep, #9A7B38);
+            color: #FFFFFF !important;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+
+        .btn-invoice-full:hover {
+            background: #7F642C;
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="detail-container">
+    
+    <!-- Top Action Bar -->
+    <div class="detail-top-bar">
+        <div class="order-title-group">
+            <a th:href="@{/orders}" style="color: #7C6D5D; text-decoration: none; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 4px;">
+                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Back to My Orders
+            </a>
+            <h1 class="order-title-text" th:text="'Order #ORD-' + ${#numbers.formatInteger(order.id, 4)}">#ORD-0001</h1>
+            <span class="order-status-badge" th:classappend="'status-' + ${order.status}" th:text="${order.status}">PENDING</span>
+        </div>
+
+        <div>
+            <a th:href="@{/orders/{id}/invoice(id=${order.id})}" class="btn-invoice-full" style="width: auto; margin-top: 0;">
+                <i data-lucide="printer" style="width: 16px; height: 16px;"></i> Official Tax Invoice (PDF)
+            </a>
+        </div>
+    </div>
+
+    <!-- Flash Notification Messages -->
+    <div th:if="${orderSuccess != null or success != null}" style="margin-bottom: 24px; padding: 16px; background: #ECFDF5; border: 1px solid #A7F3D0; border-left: 4px solid #10B981; border-radius: 12px; color: #065F46; font-size: 0.92rem; font-weight: 600;">
+        <i data-lucide="check-circle" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;"></i>
+        <span th:text="${orderSuccess != null ? orderSuccess : success}">Success message</span>
+    </div>
+    <div th:if="${orderError != null or error != null}" style="margin-bottom: 24px; padding: 16px; background: #FEF2F2; border: 1px solid #FECACA; border-left: 4px solid #EF4444; border-radius: 12px; color: #991B1B; font-size: 0.92rem; font-weight: 600;">
+        <i data-lucide="alert-circle" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;"></i>
+        <span th:text="${orderError != null ? orderError : error}">Error message</span>
+    </div>
+
+    <!-- Stepper Tracker -->
+    <div class="stepper-card">
+        <div class="stepper-heading">
+            <i data-lucide="truck" style="color: var(--gold-deep);"></i> Order Shipment & Status Stepper Tracking
+        </div>
+        <div class="stepper-track">
+            <!-- Step 1: Placed -->
+            <div class="stepper-step" th:classappend="${order.status != null ? 'completed' : ''}">
+                <div class="step-icon-circle"><i data-lucide="check" style="width: 20px; height: 20px;"></i></div>
+                <div class="step-label">Order Placed</div>
+                <div class="step-desc" th:text="${#temporals.format(order.orderDate, 'dd MMM, HH:mm')}">Date</div>
+            </div>
+
+            <!-- Step 2: Confirmed -->
+            <div class="stepper-step" th:classappend="${order.status.name() == 'CONFIRMED' or order.status.name() == 'SHIPPED' or order.status.name() == 'DELIVERED' ? 'completed' : (order.status.name() == 'PENDING' ? 'active' : '')}">
+                <div class="step-icon-circle"><i data-lucide="credit-card" style="width: 20px; height: 20px;"></i></div>
+                <div class="step-label">Payment & Confirmation</div>
+                <div class="step-desc">Processing</div>
+            </div>
+
+            <!-- Step 3: Shipped -->
+            <div class="stepper-step" th:classappend="${order.status.name() == 'SHIPPED' or order.status.name() == 'DELIVERED' ? 'completed' : ''}">
+                <div class="step-icon-circle"><i data-lucide="package-check" style="width: 20px; height: 20px;"></i></div>
+                <div class="step-label">Shipped</div>
+                <div class="step-desc">On the way</div>
+            </div>
+
+            <!-- Step 4: Delivered -->
+            <div class="stepper-step" th:classappend="${order.status.name() == 'DELIVERED' ? 'completed' : ''}">
+                <div class="step-icon-circle"><i data-lucide="home" style="width: 20px; height: 20px;"></i></div>
+                <div class="step-label">Delivered</div>
+                <div class="step-desc">Completed</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid -->
+    <div class="detail-grid">
+        
+        <!-- Left: Items List -->
+        <div class="items-card">
+            <h2 class="card-title-head">Order Items & Products</h2>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th style="text-align: center;">Qty</th>
+                        <th style="text-align: right;">Unit Price</th>
+                        <th style="text-align: right;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="item : ${order.items}">
+                        <td>
+                            <div class="item-flex">
+                                <img th:if="${item.product != null and not #strings.isEmpty(item.product.imageUrl)}" 
+                                     th:src="${item.product.imageUrl}" class="item-thumb" alt="Product Image"/>
+                                <div th:unless="${item.product != null and not #strings.isEmpty(item.product.imageUrl)}" 
+                                     class="item-thumb" style="display:flex; align-items:center; justify-content:center; color:var(--gold-deep); font-size:1.2rem;">🎵</div>
+                                <div>
+                                    <span style="font-size: 0.75rem; text-transform: uppercase; color: #7C6D5D; font-weight: 600; display: block;" 
+                                          th:text="${item.product != null ? item.product.brand : 'Brand'}">Brand</span>
+                                    <a th:href="@{/products/{id}(id=${item.product.id})}" style="font-weight: 700; color: #2D241E; text-decoration: none;"
+                                       th:text="${item.product != null ? item.product.name : 'Product Name'}">Yamaha F310</a>
+                                    
+                                    <!-- Write Review Button for Delivered Orders -->
+                                    <div th:if="${order.status.name() == 'DELIVERED' and item.product != null}" style="margin-top: 6px;">
+                                        <a th:href="@{/products/{id}#review-section(id=${item.product.id})}" style="display: inline-flex; align-items: center; gap: 4px; background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; padding: 4px 10px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; text-decoration: none;">
+                                            ⭐ Write Product Review
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="text-align: center; font-weight: 700;" th:text="${item.quantity}">1</td>
+                        <td style="text-align: right;" th:text="'LKR ' + ${#numbers.formatDecimal(item.unitPrice, 1, 'COMMA', 2, 'POINT')}">LKR 0.00</td>
+                        <td style="text-align: right; font-weight: 700; color: #2D241E;" th:text="'LKR ' + ${#numbers.formatDecimal(item.subtotal, 1, 'COMMA', 2, 'POINT')}">LKR 0.00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Right: Shipping & Summary Cards Stack -->
+        <div class="side-stack">
+            
+            <!-- Shipping Info Card -->
+            <div class="side-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                    <div class="side-card-title" style="margin-bottom: 0;"><i data-lucide="map-pin" style="color: var(--gold-deep);"></i> Delivery Shipping Address</div>
+                    <button th:if="${order.status.name() == 'PENDING'}" type="button" onclick="toggleEditAddressForm()" style="background: rgba(154, 123, 56, 0.1); color: var(--gold-deep); border: 1px solid rgba(154, 123, 56, 0.3); border-radius: 999px; padding: 4px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer;">
+                        ✏️ Edit Address
+                    </button>
+                    <span th:unless="${order.status.name() == 'PENDING'}" style="background: #F1F5F9; color: #64748B; border: 1px solid #CBD5E1; border-radius: 999px; padding: 4px 10px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;" title="Shipping address cannot be edited after order approval or shipment">
+                        🔒 Address Locked
+                    </span>
+                </div>
+
+                <div class="info-row" style="font-weight: 700; color: #2D241E;" th:text="${order.recipientName != null ? order.recipientName : (order.user != null ? order.user.fullName : 'Customer')}">Customer Name</div>
+                <div class="info-row" th:text="${order.shippingAddress}">Address text here</div>
+                <div class="info-row" style="margin-top: 6px; font-size: 0.85rem; color: #7C6D5D;">
+                    <strong>City:</strong> <span th:text="${order.city != null ? order.city : 'N/A'}">City</span> | <strong>Postal Code:</strong> <span th:text="${order.postalCode != null ? order.postalCode : 'N/A'}">Postal Code</span>
+                </div>
+                <div class="info-row" style="margin-top: 6px; font-size: 0.85rem; color: #7C6D5D;">
+                    <strong>Contact Phone:</strong> <span th:text="${order.contactPhone}">0771234567</span>
+                </div>
+                <div th:if="${not #strings.isEmpty(order.orderNotes)}" class="info-row" style="margin-top: 10px; padding: 10px; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; font-size: 0.84rem; color: #92400E;">
+                    <strong><i data-lucide="file-text" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i> Delivery Notes:</strong>
+                    <div th:text="${order.orderNotes}">Leave at front door</div>
+                </div>
+                <div th:if="${not #strings.isEmpty(order.trackingNumber)}" class="info-row" style="margin-top: 10px; padding: 12px; background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 12px; font-size: 0.84rem; color: #6B21A8;">
+                    <strong><i data-lucide="truck" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle;"></i> Courier Tracking ID:</strong>
+                    <div style="font-family: monospace; font-weight: 800; font-size: 1rem; margin: 4px 0 8px;" th:text="${order.trackingNumber}">PRONTO-12345</div>
+                    <a th:href="${'https://prontofast.lk/track?id=' + order.trackingNumber}" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; background: #6B21A8; color: #FFF; padding: 6px 14px; border-radius: 999px; font-weight: 700; font-size: 0.78rem; text-decoration: none;">
+                        🚚 Track Shipment Live &rarr;
+                    </a>
+                </div>
+
+                <!-- Collapsible Edit Address Form for PENDING Orders only -->
+                <div th:if="${order.status.name() == 'PENDING'}" id="editAddressBox" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px dashed #EAE4D9;">
+                    <form th:action="@{/orders/{id}/update-address(id=${order.id})}" method="post">
+                        <div style="margin-bottom: 10px;">
+                            <label style="font-size: 0.76rem; font-weight: 700; color: #4A3A2F;">RECIPIENT NAME</label>
+                            <input type="text" name="recipientName" th:value="${order.recipientName}" style="width: 100%; padding: 8px 12px; border: 1px solid #E6DFD5; border-radius: 8px; font-size: 0.88rem;" required/>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label style="font-size: 0.76rem; font-weight: 700; color: #4A3A2F;">SHIPPING ADDRESS</label>
+                            <textarea name="shippingAddress" rows="2" style="width: 100%; padding: 8px 12px; border: 1px solid #E6DFD5; border-radius: 8px; font-size: 0.88rem;" required th:text="${order.shippingAddress}"></textarea>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                            <div>
+                                <label style="font-size: 0.74rem; font-weight: 700; color: #4A3A2F;">CITY</label>
+                                <input type="text" name="city" th:value="${order.city}" style="width: 100%; padding: 8px; border: 1px solid #E6DFD5; border-radius: 8px; font-size: 0.85rem;"/>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.74rem; font-weight: 700; color: #4A3A2F;">POSTAL CODE</label>
+                                <input type="text" name="postalCode" th:value="${order.postalCode}" style="width: 100%; padding: 8px; border: 1px solid #E6DFD5; border-radius: 8px; font-size: 0.85rem;"/>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label style="font-size: 0.76rem; font-weight: 700; color: #4A3A2F;">CONTACT PHONE</label>
+                            <input type="text" name="contactPhone" th:value="${order.contactPhone}" style="width: 100%; padding: 8px 12px; border: 1px solid #E6DFD5; border-radius: 8px; font-size: 0.88rem;" required/>
+                        </div>
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-size: 0.76rem; font-weight: 700; color: #4A3A2F;">DELIVERY NOTES</label>
+                            <textarea name="orderNotes" rows="2" style="width: 100%; padding: 8px 12px; border: 1px solid #E6DFD5; border-radius: 8px; font-size: 0.85rem;" th:text="${order.orderNotes}"></textarea>
+                        </div>
+                        <button type="submit" style="width: 100%; background: var(--gold-deep, #9A7B38); color: #FFF; border: none; padding: 10px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">
+                            Save Updated Address
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Pricing Summary -->
+            <div class="side-card">
+                <div class="side-card-title"><i data-lucide="credit-card" style="color: var(--gold-deep);"></i> Pricing & Payment</div>
+                
+                <div class="pricing-summary-box">
+                    <div class="summary-line">
+                        <span>Items Subtotal:</span>
+                        <span th:text="'LKR ' + ${#numbers.formatDecimal(order.subtotal, 1, 'COMMA', 2, 'POINT')}">LKR 0.00</span>
+                    </div>
+                    <div class="summary-line" style="color: #166534;" th:if="${order.discountAmount != null and order.discountAmount > 0}">
+                        <span>Offer Discount (<span th:text="${order.appliedOfferCode}">CODE</span>):</span>
+                        <span th:text="'- LKR ' + ${#numbers.formatDecimal(order.discountAmount, 1, 'COMMA', 2, 'POINT')}">- LKR 0.00</span>
+                    </div>
+                    <div class="summary-line">
+                        <span>Shipping Delivery:</span>
+                        <span style="color: #166534; font-weight: 700;">FREE</span>
+                    </div>
+                    <div class="summary-line total-line">
+                        <span>Grand Total:</span>
+                        <span th:text="'LKR ' + ${#numbers.formatDecimal(order.totalAmount, 1, 'COMMA', 2, 'POINT')}">LKR 0.00</span>
+                    </div>
+                </div>
+
+                <!-- Pay Now / Retry Payment Button for PENDING orders -->
+                <a th:if="${order.status.name() == 'PENDING'}" th:href="@{/payment/pay(orderId=${order.id}, method='CREDIT_CARD')}" class="btn-invoice-full" style="background: linear-gradient(135deg, #DFB967 0%, #C29A38 100%); color: #1F1610 !important; box-shadow: 0 4px 14px rgba(194,154,56,0.3);">
+                    <i data-lucide="credit-card"></i> Pay Now / Retry Payment
+                </a>
+
+                <a th:href="@{/orders/{id}/invoice(id=${order.id})}" class="btn-invoice-full">
+                    <i data-lucide="file-text"></i> Print Official Invoice
+                </a>
+
+                <form th:if="${order.status.name() == 'PENDING'}" th:action="@{/orders/{id}/cancel(id=${order.id})}" method="post" style="margin-top: 12px;" onsubmit="return confirm('Are you sure you want to cancel this order? Store stocks will be restored.');">
+                    <button type="submit" style="width:100%; background:#FEF2F2; color:#991B1B; border:1px solid #FECACA; padding:12px; border-radius:999px; font-size:0.88rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+                        <i data-lucide="x-circle" style="width:16px; height:16px;"></i> Cancel This Order
+                    </button>
+                </form>
+
+                <!-- Request Return / Cancellation for Confirmed/Shipped/Delivered orders -->
+                <button th:if="${order.status.name() == 'CONFIRMED' or order.status.name() == 'SHIPPED' or order.status.name() == 'DELIVERED'}"
+                        type="button"
+                        th:onclick="'openCancelReturnModal(' + (${order.status.name() == 'DELIVERED'}) + ')'"
+                        style="width:100%; background:#FFFBEB; color:#92400E; border:1px solid #FDE68A; padding:12px; border-radius:999px; font-size:0.88rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; margin-top:12px;">
+                    <i data-lucide="rotate-ccw" style="width:16px; height:16px;"></i> <span th:text="${order.status.name() == 'DELIVERED' ? 'Request Item Return' : 'Request Cancellation'}">Request Return</span>
+                </button>
+            </div>
+
+            <!-- Member 3 Payment & Refund Status Card -->
+            <div class="side-card" style="background: #FAF8F5; border: 1.5px solid #EAE4D9;">
+                <div class="side-card-title" style="margin-bottom: 10px;">
+                    <i data-lucide="shield-check" style="color: var(--gold-deep);"></i> Payment &amp; Refund Status
+                </div>
+                
+                <div style="font-size: 0.88rem; color: #4A3E35; line-height: 1.6;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span>Payment Status:</span>
+                        <a th:href="@{/payment/result(orderId=${order.id})}" style="font-weight: 800; text-decoration: none; color: var(--gold-deep); font-size: 0.82rem;">
+                            View Official Receipt &rarr;
+                        </a>
+                    </div>
+
+                    <!-- Refund Pending Notice -->
+                    <div th:if="${payment != null and payment.status.name() == 'REFUND_REQUESTED'}" style="padding: 12px; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; color: #92400E; font-size: 0.84rem; font-weight: 600; margin-top: 10px;">
+                        <i data-lucide="clock" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>
+                        <strong>Refund Request Active:</strong> Your request of LKR <span th:text="${#numbers.formatDecimal(order.totalAmount, 1, 'COMMA', 2, 'POINT')}">0.00</span> is pending review by our Payment Officer.
+                    </div>
+
+                    <!-- Refund Declined Notice with Admin Comment -->
+                    <div th:if="${payment != null and payment.notes != null and payment.notes.contains('Declined')}" style="padding: 12px; background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 10px; color: #991B1B; font-size: 0.84rem; font-weight: 600; margin-top: 10px; line-height: 1.5;">
+                        <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; color: #991B1B; margin-bottom: 4px;">
+                            <i data-lucide="x-circle" style="width: 16px; height: 16px;"></i>
+                            <span>Refund Request Declined by Payment Officer</span>
+                        </div>
+                        <div style="color: #7F1D1D; font-weight: 500;" th:text="${payment.notes}">Reason: Refund request declined.</div>
+                    </div>
+
+                    <!-- Refund Completed Notice -->
+                    <div th:if="${payment != null and payment.status.name() == 'REFUNDED'}" style="padding: 12px; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; color: #166534; font-size: 0.84rem; font-weight: 600; margin-top: 10px; line-height: 1.5;">
+                        <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; color: #166534; margin-bottom: 4px;">
+                            <i data-lucide="check-circle-2" style="width: 16px; height: 16px;"></i>
+                            <span>Refund Completed</span>
+                        </div>
+                        <div th:if="${payment.notes != null}" style="color: #14532D; font-weight: 500;" th:text="${payment.notes}">Refund processed successfully.</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Sleek Custom Modal for Cancellation / Return Request -->
+<div id="cancelReturnModal" style="display: none; position: fixed; inset: 0; background: rgba(30, 22, 16, 0.65); backdrop-filter: blur(5px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: #FFFFFF; border-radius: 20px; max-width: 480px; width: 100%; border: 1px solid #EAE4D9; box-shadow: 0 20px 50px rgba(0,0,0,0.25); overflow: hidden;">
+        <div style="background: #FAF8F5; padding: 20px 24px; border-bottom: 1px solid #EAE4D9; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 10px; background: #FEF3C7; border: 1px solid #FDE68A; color: #D97706; display: flex; align-items: center; justify-content: center;">
+                    <i data-lucide="rotate-ccw" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div>
+                    <h3 id="modalTitle" style="font-family: var(--font-display, serif); font-size: 1.15rem; font-weight: 700; color: #2D241E; margin: 0;">Request Cancellation / Return</h3>
+                    <span style="font-size: 0.78rem; color: #7C6D5D;">Store Support &amp; Payment Refund Request</span>
+                </div>
+            </div>
+            <button type="button" onclick="closeCancelReturnModal()" style="background: transparent; border: none; font-size: 1.5rem; color: #7C6D5D; cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+
+        <form id="cancelReturnForm" th:action="@{/orders/{id}/request-cancel-return(id=${order.id})}" method="post" style="padding: 24px;" onsubmit="return validateReasonInput()">
+            <p style="font-size: 0.9rem; color: #4A3E35; margin-top: 0; margin-bottom: 14px; line-height: 1.5;">
+                Please provide a reason for your request. If your order was paid, your refund request will be forwarded directly to our Payment Management department.
+            </p>
+            <div style="margin-bottom: 16px;">
+                <label style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #2D241E; display: block; margin-bottom: 6px;">Reason for Request <span style="color: #DC2626;">*</span></label>
+                <textarea id="modalReasonTextarea" name="reason" rows="3" placeholder="e.g. Changed mind / Incorrect size / Damaged item..." style="width: 100%; padding: 12px; border: 1.5px solid #EAE4D9; border-radius: 10px; font-size: 0.9rem; font-family: inherit; resize: vertical;" required></textarea>
+                <div id="modalErrorMsg" style="display: none; color: #DC2626; font-size: 0.8rem; font-weight: 600; margin-top: 6px;">Please enter a reason before submitting your request.</div>
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                <button type="button" onclick="closeCancelReturnModal()" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; padding: 10px 20px; border-radius: 999px; font-weight: 700; font-size: 0.88rem; cursor: pointer;">Cancel</button>
+                <button type="submit" style="background: linear-gradient(135deg, #DFB967 0%, #C29A38 100%); color: #1F1610; border: none; padding: 10px 24px; border-radius: 999px; font-weight: 800; font-size: 0.88rem; cursor: pointer; box-shadow: 0 4px 12px rgba(194, 154, 56, 0.3);">Submit Request &rarr;</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+<script>
+    lucide.createIcons();
+
+    function toggleEditAddressForm() {
+        var box = document.getElementById('editAddressBox');
+        if (box) {
+            box.style.display = (box.style.display === 'none' || box.style.display === '') ? 'block' : 'none';
+        }
+    }
+
+    function openCancelReturnModal(isDelivered) {
+        const modal = document.getElementById('cancelReturnModal');
+        const title = document.getElementById('modalTitle');
+        const textarea = document.getElementById('modalReasonTextarea');
+        const errorMsg = document.getElementById('modalErrorMsg');
+        
+        if (title) {
+            title.innerText = isDelivered ? 'Request Item Return' : 'Request Order Cancellation';
+        }
+        if (textarea) textarea.value = '';
+        if (errorMsg) errorMsg.style.display = 'none';
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closeCancelReturnModal() {
+        const modal = document.getElementById('cancelReturnModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+
+    function validateReasonInput() {
+        const textarea = document.getElementById('modalReasonTextarea');
+        const errorMsg = document.getElementById('modalErrorMsg');
+        
+        if (!textarea || !textarea.value.trim()) {
+            if (errorMsg) errorMsg.style.display = 'block';
+            return false;
+        }
+        return true;
+    }
+</script>
+</body>
+</html>
