@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Invoice #' + ${#numbers.formatInteger(order.id, 4)} + ' - Melodia Music Store'">Tax Invoice - Melodia</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background-color: #FAF8F5 !important;
+            font-family: var(--font-body, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
+            color: #241A12;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .invoice-actions-bar {
+            max-width: 900px;
+            margin: 36px auto 0;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .invoice-card {
+            max-width: 900px;
+            margin: 24px auto 70px;
+            background: #FFFFFF;
+            border-radius: 20px;
+            border: 1px solid #EAE4D9;
+            border-top: 6px solid #C8A24B;
+            box-shadow: 0 20px 50px rgba(33, 21, 16, 0.08);
+            padding: 56px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .invoice-card::before {
+            content: "MELODIA";
+            position: absolute;
+            right: -40px;
+            bottom: 40px;
+            font-family: var(--font-display, 'Playfair Display', Georgia, serif);
+            font-size: 9rem;
+            font-weight: 800;
+            color: rgba(200, 162, 75, 0.03);
+            letter-spacing: 0.1em;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* Invoice Header */
+        .inv-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px dashed #EAE4D9;
+            padding-bottom: 34px;
+            margin-bottom: 40px;
+        }
+
+        .inv-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .inv-brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .inv-brand-icon {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #211510 0%, #3A2717 100%);
+            border: 1.5px solid #C8A24B;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #C8A24B;
+            font-size: 1.3rem;
+            box-shadow: 0 4px 12px rgba(33, 21, 16, 0.15);
+        }
+
+        .inv-brand-name {
+            font-family: var(--font-display, 'Playfair Display', Georgia, serif);
+            font-size: 2.3rem;
+            font-weight: 800;
+            color: #211510;
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+
+        .inv-brand-sub {
+            font-size: 0.78rem;
+            color: #C8A24B;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            font-weight: 700;
+        }
+
+        .inv-meta {
+            text-align: right;
+        }
+
+        .inv-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 18px;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .inv-badge.status-PENDING { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+        .inv-badge.status-CONFIRMED { background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE; }
+        .inv-badge.status-SHIPPED { background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF; }
+        .inv-badge.status-DELIVERED { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
+        .inv-badge.status-CANCELLED { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+
+        .inv-num {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #211510;
+            margin-bottom: 4px;
+            letter-spacing: -0.01em;
+        }
+
+        .inv-date {
+            font-size: 0.88rem;
+            color: #6D5C47;
+            font-weight: 500;
+        }
+
+        /* Seller & Buyer Grid */
+        .inv-addresses-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+            margin-bottom: 40px;
+        }
+
+        .address-box {
+            background: #FAF8F5;
+            border-radius: 16px;
+            padding: 24px 28px;
+            border: 1px solid #EBE4D5;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        .address-title {
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            font-weight: 800;
+            color: #9C7A2F;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .address-name {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #211510;
+            margin-bottom: 10px;
+        }
+
+        .address-text {
+            font-size: 0.9rem;
+            color: #5C4230;
+            line-height: 1.65;
+            margin: 0;
+        }
+
+        .address-info-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .address-info-row i {
+            width: 15px;
+            height: 15px;
+            color: #C8A24B;
+            flex-shrink: 0;
+        }
+
+        /* Items Table */
+        .inv-table-wrapper {
+            margin-bottom: 36px;
+            border: 1px solid #EAE4D9;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 14px rgba(33, 21, 16, 0.02);
+        }
+
+        .inv-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .inv-table th {
+            background: #FAF5E8;
+            color: #5C4230;
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 800;
+            padding: 16px 22px;
+            text-align: left;
+            border-bottom: 1px solid #E5DEC9;
+        }
+
+        .inv-table th.text-center { text-align: center; }
+        .inv-table th.text-right { text-align: right; }
+
+        .inv-table td {
+            padding: 18px 22px;
+            border-bottom: 1px solid #F3EDE0;
+            font-size: 0.94rem;
+            color: #241A12;
+            background: #FFFFFF;
+        }
+
+        .inv-table tr:hover td {
+            background: #FCFAF6;
+        }
+
+        .inv-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .item-brand {
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9C7A2F;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .item-title {
+            font-weight: 700;
+            color: #211510;
+        }
+
+        /* Summary Calculations */
+        .inv-summary-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 40px;
+        }
+
+        .inv-summary-box {
+            width: 340px;
+            background: #FAF8F5;
+            border-radius: 16px;
+            padding: 22px 26px;
+            border: 1px solid #EBE4D5;
+            box-shadow: 0 6px 18px rgba(33, 21, 16, 0.03);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.92rem;
+            color: #5C4230;
+            padding: 8px 0;
+            font-weight: 500;
+        }
+
+        .summary-row.discount {
+            color: #3F7D54;
+            font-weight: 700;
+        }
+
+        .summary-row.total {
+            border-top: 2px solid #E5DEC9;
+            margin-top: 10px;
+            padding-top: 14px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #211510;
+        }
+
+        /* Footer Stamp */
+        .inv-footer {
+            border-top: 2px dashed #EAE4D9;
+            padding-top: 28px;
+            text-align: center;
+            color: #6D5C47;
+            font-size: 0.84rem;
+            line-height: 1.6;
+        }
+
+        /* Print Media Styles */
+        @media print {
+            .invoice-actions-bar, header, footer, .navbar, .btn {
+                display: none !important;
+            }
+            body {
+                background: #FFFFFF !important;
+            }
+            .invoice-card {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation Bar (Screen Only) -->
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<!-- Action Bar (Print & Back buttons) -->
+<div class="invoice-actions-bar">
+    <a th:href="@{/orders/{id}(id=${order.id})}" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 10px 22px; font-weight: 600;">
+        <i data-lucide="arrow-left" style="width:16px; height:16px;"></i> Back to Order Details
+    </a>
+    <div style="display: flex; gap: 10px;">
+        <button type="button" onclick="downloadInvoicePDF()" class="btn" style="display: inline-flex; align-items: center; gap: 8px; background: #211510; color: #FAF8F5; border: none; padding: 12px 24px; border-radius: 999px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 14px rgba(33, 21, 16, 0.2);">
+            <i data-lucide="download" style="width:16px; height:16px; color:#C8A24B;"></i> Download PDF Invoice
+        </button>
+        <button type="button" onclick="window.print()" class="btn" style="display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #C8A24B 0%, #9C7A2F 100%); color: #211510; border: none; padding: 12px 24px; border-radius: 999px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 14px rgba(200, 162, 75, 0.3);">
+            <i data-lucide="printer" style="width:16px; height:16px;"></i> Print Invoice
+        </button>
+    </div>
+</div>
+
+<!-- Invoice Document Sheet -->
+<div class="invoice-card">
+    
+    <!-- Top Header -->
+    <div class="inv-header">
+        <div class="inv-brand">
+            <div class="inv-brand-logo">
+                <div class="inv-brand-icon">🎵</div>
+                <div>
+                    <span class="inv-brand-name">Melodia</span>
+                    <span class="inv-brand-sub" style="display:block;">Official Store Invoice</span>
+                </div>
+            </div>
+            <p style="margin: 12px 0 0; font-size: 0.86rem; color: #6D5C47; line-height: 1.5;">
+                SLIIT Malabe Campus, Kandy Road, Malabe<br>
+                Tel: +94 11 241 3900 | Email: support@musicstore.lk
+            </p>
+        </div>
+        <div class="inv-meta">
+            <span class="inv-badge" th:classappend="'status-' + ${order.status}">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: currentColor; display: inline-block;"></span>
+                <span th:text="${order.status}">STATUS</span>
+            </span>
+            <div class="inv-num" th:text="'#INV-' + ${#numbers.formatInteger(order.id, 4)}">#INV-0001</div>
+            <div class="inv-date">Issued: <strong style="color:#211510;" th:text="${#temporals.format(order.orderDate, 'dd MMMM yyyy, HH:mm')}">Date</strong></div>
+        </div>
+    </div>
+
+    <!-- Seller & Customer Addresses -->
+    <div class="inv-addresses-grid">
+        <div class="address-box">
+            <div class="address-title">
+                <i data-lucide="user-check"></i> Billed &amp; Shipped To
+            </div>
+            <div class="address-name" th:text="${order.recipientName != null and !order.recipientName.empty ? order.recipientName : (order.user != null ? order.user.fullName : 'Customer')}">Recipient Name</div>
+            <div class="address-text">
+                <div class="address-info-row"><i data-lucide="map-pin"></i> <span><strong style="color: #211510;">Address:</strong> <span th:text="${order.shippingAddress}">Shipping Address</span></span></div>
+                <div class="address-info-row" th:if="${order.city != null and !order.city.empty}"><i data-lucide="building"></i> <span><strong style="color: #211510;">City / Town:</strong> <span th:text="${order.city}">City</span></span></div>
+                <div class="address-info-row" th:if="${order.postalCode != null and !order.postalCode.empty}"><i data-lucide="mail-check"></i> <span><strong style="color: #211510;">Postal Code:</strong> <span th:text="${order.postalCode}">Postal Code</span></span></div>
+                <div class="address-info-row"><i data-lucide="phone"></i> <span><strong style="color: #211510;">Phone:</strong> <span th:text="${order.contactPhone}">Phone</span></span></div>
+                <div class="address-info-row"><i data-lucide="mail"></i> <span><strong style="color: #211510;">Email:</strong> <span th:text="${order.user != null ? order.user.email : 'N/A'}">Email</span></span></div>
+            </div>
+        </div>
+        <div class="address-box">
+            <div class="address-title">
+                <i data-lucide="package-check"></i> Order &amp; Courier Details
+            </div>
+            <div class="address-text" style="padding-top: 4px;">
+                <div class="address-info-row"><i data-lucide="file-text"></i> <span><strong style="color: #211510;">Order ID:</strong> <span th:text="'#ORD-' + ${#numbers.formatInteger(order.id, 4)}">#ORD-0001</span></span></div>
+                <div class="address-info-row"><i data-lucide="truck"></i> <span><strong style="color: #211510;">Courier Tracking:</strong> <span style="font-weight: 700; color: #9C7A2F;" th:text="${order.trackingNumber != null ? order.trackingNumber : 'Processing Delivery'}">Processing</span></span></div>
+                <div class="address-info-row"><i data-lucide="tag"></i> <span><strong style="color: #211510;">Coupon Applied:</strong> <span style="background: #FAF5E8; border: 1px solid #E5DEC9; color: #7C5F1E; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 700;" th:text="${order.appliedOfferCode != null ? order.appliedOfferCode : 'None'}">None</span></span></div>
+                <div class="address-info-row" th:if="${order.orderNotes != null and !order.orderNotes.empty}"><i data-lucide="message-square"></i> <span><strong style="color: #211510;">Delivery Notes:</strong> <span th:text="${order.orderNotes}">Notes</span></span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="inv-table-wrapper">
+        <table class="inv-table">
+            <thead>
+                <tr>
+                    <th>Item Description</th>
+                    <th class="text-center">Qty</th>
+                    <th class="text-right">Unit Price</th>
+                    <th class="text-right">Total Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item : ${order.items}">
+                    <td>
+                        <span class="item-brand" th:text="${item.product != null ? item.product.brand : 'Brand'}">Brand</span>
+                        <span class="item-title" th:text="${item.product != null ? item.product.name : 'Product'}">Product Name</span>
+                    </td>
+                    <td class="text-center" style="font-weight: 700;" th:text="${item.quantity}">1</td>
+                    <td class="text-right" th:text="'LKR ' + ${#numbers.formatDecimal(item.unitPrice, 1, 'COMMA', 2, 'POINT')}">LKR 0.00</td>
+                    <td class="text-right" style="font-weight: 800; color: #211510;" th:text="'LKR ' + ${#numbers.formatDecimal(item.subtotal, 1, 'COMMA', 2, 'POINT')}">LKR 0.00</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pricing Summary -->
+    <div class="inv-summary-container">
+        <div class="inv-summary-box">
+            <div class="summary-row">
+                <span>Subtotal:</span>
+                <span style="font-weight: 700; color: #211510;" th:text="'LKR ' + ${#numbers.formatDecimal(order.subtotal, 1, 'COMMA', 2, 'POINT')}">LKR 0.00</span>
+            </div>
+            <div class="summary-row discount" th:if="${order.discountAmount != null and order.discountAmount > 0}">
+                <span>Discount (<span th:text="${order.appliedOfferCode}">OFFER</span>):</span>
+                <span th:text="'- LKR ' + ${#numbers.formatDecimal(order.discountAmount, 1, 'COMMA', 2, 'POINT')}">- LKR 0.00</span>
+            </div>
+            <div class="summary-row">
+                <span>Standard Delivery:</span>
+                <span style="color: #3F7D54; font-weight: 800;">FREE</span>
+            </div>
+            <div class="summary-row total">
+                <span>Grand Total:</span>
+                <span style="color: #211510; font-weight: 800;" th:text="'LKR ' + ${#numbers.formatDecimal(order.totalAmount, 1, 'COMMA', 2, 'POINT')}">LKR 0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Footer -->
+    <div class="inv-footer">
+        <p style="margin-bottom: 4px; font-weight: 700; color: #211510;">Thank you for choosing Melodia Music & Instruments!</p>
+        <p style="margin: 0;">This is an official computer-generated tax invoice and requires no physical signature. For assistance, contact support@musicstore.lk</p>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+
+    function downloadInvoicePDF() {
+        const element = document.querySelector('.invoice-card');
+        const opt = {
+            margin:       10,
+            filename:     'Melodia_Tax_Invoice_' + (document.title.replace(/[^0-9]/g, '') || 'Order') + '.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+</body>
+</html>
