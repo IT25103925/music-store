@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart - Melodia Music Store</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        body {
+            background-color: var(--cream, #FAF8F5) !important;
+            font-family: var(--font-body, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
+        }
+
+        .cart-container {
+            max-width: 1140px;
+            margin: 40px auto 80px;
+            padding: 0 20px;
+        }
+
+        .cart-header {
+            margin-bottom: 36px;
+        }
+
+        .cart-eyebrow {
+            display: inline-block;
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            font-weight: 700;
+            color: var(--gold-deep, #9A7B38);
+            margin-bottom: 6px;
+        }
+
+        .cart-title {
+            font-family: var(--font-display, 'Playfair Display', Georgia, serif);
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #2D241E;
+            margin: 0;
+        }
+
+        /* 2-Column Grid Layout */
+        .cart-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 36px;
+            align-items: start;
+        }
+
+        /* Cart Items Section */
+        .cart-items-card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            border: 1px solid #EAE4D9;
+            box-shadow: 0 6px 24px rgba(45, 36, 30, 0.05);
+            overflow: hidden;
+        }
+
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .cart-table th {
+            background: #2D241E;
+            color: #FAF8F5;
+            font-weight: 700;
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 16px 20px;
+            text-align: left;
+            border: none;
+        }
+
+        .cart-table th.text-center { text-align: center; }
+        .cart-table th.text-right { text-align: right; }
+
+        .cart-table td {
+            padding: 20px;
+            border-bottom: 1px solid #F0EAE1;
+            vertical-align: middle;
+        }
+
+        .cart-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Product Detail in Table */
+        .cart-item-flex {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .cart-item-thumb {
+            width: 72px;
+            height: 72px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid #EAE4D9;
+            background: #FAF8F5;
+            flex-shrink: 0;
+        }
+
+        .cart-item-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cart-item-brand {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+            color: var(--gold-deep, #9A7B38);
+        }
+
+        .cart-item-name {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #2D241E;
+            text-decoration: none;
+            line-height: 1.3;
+            margin-top: 2px;
+        }
+
+        .cart-item-name:hover {
+            color: var(--gold-deep, #9A7B38);
+        }
+
+        .cart-price {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #6E6258;
+            white-space: nowrap;
+        }
+
+        .cart-subtotal {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #2D241E;
+            white-space: nowrap;
+        }
+
+        /* Quantity Stepper Control */
+        .quantity-stepper {
+            display: inline-flex;
+            align-items: center;
+            border: 1.5px solid #EAE4D9;
+            border-radius: 8px;
+            background: #FAF8F5;
+            overflow: hidden;
+        }
+
+        .stepper-btn {
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: none;
+            color: #2D241E;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .stepper-btn:hover {
+            background: #EAE4D9;
+        }
+
+        .stepper-input {
+            width: 38px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.92rem;
+            color: #2D241E;
+            -moz-appearance: textfield;
+        }
+        .stepper-input::-webkit-outer-spin-button,
+        .stepper-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* Remove & Wishlist Action Icons */
+        .cart-wishlist-btn {
+            background: rgba(223, 185, 103, 0.12);
+            border: 1px solid rgba(194, 154, 56, 0.3);
+            color: var(--gold-deep, #9A7B38);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .cart-wishlist-btn:hover {
+            background: #DFB967;
+            color: #1F1610;
+            border-color: #DFB967;
+        }
+
+        .cart-remove-btn {
+            background: rgba(220, 38, 38, 0.08);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+            color: #DC2626;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .cart-remove-btn:hover {
+            background: #DC2626;
+            color: #FFFFFF;
+            border-color: #DC2626;
+        }
+
+        /* Footer Action Links */
+        .cart-footer-actions {
+            padding: 16px 20px;
+            background: #FAF8F5;
+            border-top: 1px solid #F0EAE1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .continue-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #6E6258;
+            font-weight: 600;
+            font-size: 0.88rem;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .continue-link:hover {
+            color: #2D241E;
+        }
+
+        /* Summary & Promo Column */
+        .summary-column {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .promo-box {
+            background: #FFFFFF;
+            border-radius: 16px;
+            border: 1px solid #EAE4D9;
+            padding: 24px;
+            box-shadow: 0 6px 24px rgba(45, 36, 30, 0.04);
+        }
+
+        .promo-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #2D241E;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .promo-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .promo-input {
+            flex: 1;
+            height: 44px;
+            border-radius: 8px;
+            border: 1.5px solid #E6DFD5;
+            padding: 0 14px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+        }
+
+        .promo-input:focus {
+            border-color: #D4AF37;
+            outline: none;
+        }
+
+        .promo-btn {
+            background: #2D241E;
+            color: #FFFFFF;
+            border: none;
+            padding: 0 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .promo-btn:hover {
+            background: #4A3A2F;
+        }
+
+        .applied-badge {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.88rem;
+            color: #065F46;
+        }
+
+        /* Order Summary Card */
+        .summary-card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            border: 1px solid #EAE4D9;
+            padding: 28px;
+            box-shadow: 0 8px 28px rgba(45, 36, 30, 0.06);
+        }
+
+        .summary-card-title {
+            font-family: var(--font-display, serif);
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2D241E;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #F0EAE1;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 0.92rem;
+            color: #6E6258;
+        }
+
+        .summary-row.total {
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 2px dashed #EAE4D9;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #2D241E;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #DFB967 0%, #C29A38 100%);
+            color: #1F1610;
+            border: none;
+            padding: 16px 20px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 0.92rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 24px;
+            box-shadow: 0 6px 16px rgba(194, 154, 56, 0.3);
+            transition: all 0.22s ease;
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(194, 154, 56, 0.4);
+            color: #1F1610;
+        }
+
+        .guarantee-badges {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: #7C6D5D;
+        }
+
+        .guarantee-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .guarantee-item svg {
+            color: #10B981;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 900px) {
+            .cart-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="cart-container">
+    <div class="cart-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <span class="cart-eyebrow">Shopping Bag &amp; Summary</span>
+            <h1 class="cart-title">Your Cart</h1>
+        </div>
+        <div th:if="${not #lists.isEmpty(activeItems)}" style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" id="clearCartTriggerBtn" onclick="showClearCartConfirm()" style="background: rgba(220, 38, 38, 0.08); color: #DC2626; border: 1px solid rgba(220, 38, 38, 0.2); padding: 8px 18px; border-radius: 999px; font-weight: 700; font-size: 0.84rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                Clear Entire Cart
+            </button>
+            <form th:action="@{/cart/clear}" method="post" id="clearCartForm" style="display: none; margin: 0; align-items: center; gap: 8px; background: #FEF2F2; border: 1px solid #FCA5A5; padding: 4px 12px; border-radius: 999px;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #991B1B;">Clear all cart items?</span>
+                <button type="submit" style="background: #DC2626; color: #FFFFFF; border: none; padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 0.78rem; cursor: pointer;">Yes, Clear</button>
+                <button type="button" onclick="hideClearCartConfirm()" style="background: #E5E7EB; color: #374151; border: none; padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 0.78rem; cursor: pointer;">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <div th:if="${success}" class="alert alert-success" style="background:#ECFDF5; color:#065F46; border:1px solid #A7F3D0; padding:12px 18px; border-radius:12px; margin-bottom:20px; font-weight:600;" th:text="${success}"></div>
+
+    <!-- Dynamic Free Delivery Threshold Progress Banner -->
+    <div th:if="${not #lists.isEmpty(activeItems)}" style="background: #FFFFFF; border-radius: 16px; border: 1.5px solid #EAE4D9; padding: 18px 24px; margin-bottom: 24px; box-shadow: 0 4px 16px rgba(45,36,30,0.04);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: 700; font-size: 0.92rem; color: #2D241E;">
+            <span th:if="${subtotal < 10000}" style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">🚚</span>
+                <span>Add <strong style="color: var(--gold-deep, #9A7B38);" th:text="'LKR ' + ${#numbers.formatDecimal(10000 - subtotal, 1, 'COMMA', 0, 'POINT')}">LKR 0</strong> more to unlock <strong style="color: var(--gold-deep, #9A7B38);">FREE Express Courier Delivery</strong>!</span>
+            </span>
+            <span th:if="${subtotal >= 10000}" style="display: flex; align-items: center; gap: 8px; color: #059669;">
+                <span style="font-size: 1.2rem;">🎉</span>
+                <span>Congratulations! Your order qualifies for <strong>FREE Express Courier Delivery</strong>!</span>
+            </span>
+            <span style="font-size: 0.84rem; font-weight: 800; color: #7C6D5D;" th:text="${(subtotal * 100 / 10000 > 100 ? 100 : (subtotal * 100 / 10000))} + '% Completed'">0%</span>
+        </div>
+        <div style="width: 100%; height: 10px; background: #FAF8F5; border-radius: 999px; border: 1px solid #EAE4D9; overflow: hidden;">
+            <div th:style="'width: ' + ${(subtotal * 100 / 10000 > 100 ? 100 : (subtotal * 100 / 10000))} + '%; height: 100%; background: linear-gradient(90deg, #DFB967 0%, #10B981 100%); transition: width 0.5s ease; border-radius: 999px;'"></div>
+        </div>
+    </div>
+
+    <!-- Active Cart Content -->
+    <div class="cart-layout" th:if="${not #lists.isEmpty(activeItems) or not #lists.isEmpty(savedItems)}">
+        
+        <!-- Left: Items List Stack -->
+        <div style="display: flex; flex-direction: column; gap: 28px;">
+            <div class="cart-items-card" th:if="${not #lists.isEmpty(activeItems)}">
+                <table class="cart-table">
+                    <thead>
+                        <tr>
+                            <th>Product Item</th>
+                            <th>Price</th>
+                            <th class="text-center">Quantity</th>
+                            <th class="text-right">Subtotal</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="item : ${activeItems}">
+                            <td>
+                                <div class="cart-item-flex">
+                                    <img th:if="${item.product.imageUrl}" th:src="${item.product.imageUrl}" 
+                                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1510915361894-db8b60106cb1?q=80&w=800&auto=format&fit=crop';" 
+                                         class="cart-item-thumb" alt="Product Image"/>
+                                    <img th:unless="${item.product.imageUrl}" 
+                                         src="https://images.unsplash.com/photo-1510915361894-db8b60106cb1?q=80&w=800&auto=format&fit=crop" 
+                                         class="cart-item-thumb" alt="Product Image"/>
+                                    
+                                    <div class="cart-item-info">
+                                        <span class="cart-item-brand" th:text="${item.product.brand}">Brand</span>
+                                        <a th:href="@{/products/{id}(id=${item.product.id})}" class="cart-item-name" th:text="${item.product.name}">Yamaha F310 Acoustic Guitar</a>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="cart-price" th:text="'LKR ' + ${#numbers.formatDecimal(item.product.price, 1, 'COMMA', 0, 'POINT')}">LKR 39,900</td>
+
+                            <td class="text-center">
+                                <form th:action="@{/cart/update}" method="post" class="quantity-stepper">
+                                    <input type="hidden" name="productId" th:value="${item.product.id}"/>
+                                    <button type="button" class="stepper-btn" onclick="stepQuantity(this, -1)">&minus;</button>
+                                    <input type="number" name="quantity" th:value="${item.quantity}" min="1" th:max="${item.product.stockQuantity != null ? item.product.stockQuantity : 99}" class="stepper-input" onchange="validateAndSubmit(this)"/>
+                                    <button type="button" class="stepper-btn" onclick="stepQuantity(this, 1)">&plus;</button>
+                                </form>
+                                <div style="font-size: 0.72rem; color: #9A7B38; margin-top: 4px;" th:if="${item.product.stockQuantity != null}" th:text="'Stock: ' + ${item.product.stockQuantity}">Stock: 10</div>
+                            </td>
+
+                            <td class="text-right cart-subtotal" th:text="'LKR ' + ${#numbers.formatDecimal(item.subtotal, 1, 'COMMA', 0, 'POINT')}">LKR 39,900</td>
+
+                            <td class="text-right" style="white-space: nowrap;">
+                                <form th:action="@{/cart/save-for-later}" method="post" style="display:inline; margin-right: 4px;">
+                                    <input type="hidden" name="productId" th:value="${item.product.id}"/>
+                                    <button type="submit" class="cart-wishlist-btn" title="Save for Later" aria-label="Save for Later" style="color: #4B5563; background: #F3F4F6; border-color: #E5E7EB;">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                                    </button>
+                                </form>
+                                <form th:action="@{/cart/move-to-wishlist}" method="post" style="display:inline; margin-right: 4px;">
+                                    <input type="hidden" name="productId" th:value="${item.product.id}"/>
+                                    <button type="submit" class="cart-wishlist-btn" title="Move to Wishlist" aria-label="Move to Wishlist">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                        </svg>
+                                    </button>
+                                </form>
+                                <form th:action="@{/cart/remove}" method="post" style="display:inline;">
+                                    <input type="hidden" name="productId" th:value="${item.product.id}"/>
+                                    <button type="submit" class="cart-remove-btn" title="Remove item" aria-label="Remove item">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="cart-footer-actions">
+                    <a href="/products" class="continue-link">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                        <span>Continue Shopping</span>
+                    </a>
+                    <span style="font-size: 0.85rem; color: #7C6D5D;" th:text="${#lists.size(activeItems)} + ' item(s) in active cart'">1 item in cart</span>
+                </div>
+            </div>
+
+            <!-- Saved for Later Card -->
+            <div class="cart-items-card" th:if="${not #lists.isEmpty(savedItems)}" style="border-color: #D6C8A7; background: #FFFDF9;">
+                <div style="padding: 16px 20px; background: #FAF5EB; border-bottom: 1px solid #EAE4D9; display: flex; align-items: center; justify-content: space-between;">
+                    <strong style="font-size: 0.95rem; color: #2D241E; display: flex; align-items: center; gap: 8px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                        Saved for Later (<span th:text="${#lists.size(savedItems)}">0</span>)
+                    </strong>
+                    <span style="font-size: 0.8rem; color: #7C6D5D;">Items saved here won't be charged during checkout</span>
+                </div>
+                <table class="cart-table">
+                    <tbody>
+                        <tr th:each="sItem : ${savedItems}">
+                            <td>
+                                <div class="cart-item-flex">
+                                    <img th:if="${sItem.product.imageUrl}" th:src="${sItem.product.imageUrl}" class="cart-item-thumb" alt="Product Image"/>
+                                    <img th:unless="${sItem.product.imageUrl}" src="https://images.unsplash.com/photo-1510915361894-db8b60106cb1?q=80&w=800&auto=format&fit=crop" class="cart-item-thumb" alt="Product Image"/>
+                                    <div class="cart-item-info">
+                                        <span class="cart-item-brand" th:text="${sItem.product.brand}">Brand</span>
+                                        <a th:href="@{/products/{id}(id=${sItem.product.id})}" class="cart-item-name" th:text="${sItem.product.name}">Product Name</a>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="cart-price" th:text="'LKR ' + ${#numbers.formatDecimal(sItem.product.price, 1, 'COMMA', 0, 'POINT')}">LKR 0</td>
+                            <td class="text-right" style="white-space: nowrap;">
+                                <form th:action="@{/cart/move-to-cart-from-saved}" method="post" style="display:inline; margin-right: 6px;">
+                                    <input type="hidden" name="productId" th:value="${sItem.product.id}"/>
+                                    <button type="submit" style="background: var(--gold-deep, #9A7B38); color: #FFF; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 0.82rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                                        Move Back to Cart
+                                    </button>
+                                </form>
+                                <form th:action="@{/cart/remove}" method="post" style="display:inline;">
+                                    <input type="hidden" name="productId" th:value="${sItem.product.id}"/>
+                                    <button type="submit" class="cart-remove-btn" title="Remove item">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Right: Summary & Voucher Column -->
+        <div class="summary-column">
+            
+            <!-- Order Summary Card (Primary Action Box - Always Top Right) -->
+            <div class="summary-card">
+                <h3 class="summary-card-title">Order Summary</h3>
+
+                <div class="summary-row">
+                    <span>Items Subtotal</span>
+                    <strong th:text="'LKR ' + ${#numbers.formatDecimal(subtotal, 1, 'COMMA', 0, 'POINT')}">LKR 39,900</strong>
+                </div>
+
+                <div class="summary-row" th:if="${discount != null and discount.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                    <span>Promotional Discount</span>
+                    <strong style="color: #10B981;" th:text="'- LKR ' + ${#numbers.formatDecimal(discount, 1, 'COMMA', 0, 'POINT')}">- LKR 3,990</strong>
+                </div>
+
+                <!-- Shipping Cost Estimator -->
+                <div th:if="${subtotal >= 10000}" style="margin: 18px 0; padding: 14px 16px; background: #ECFDF5; border: 1.5px solid #A7F3D0; border-radius: 12px;">
+                    <label style="font-size: 0.78rem; font-weight: 800; color: #065F46; text-transform: uppercase; letter-spacing: 0.06em; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                        🎉 FREE EXPRESS SHIPPING UNLOCKED
+                    </label>
+                    <div style="font-size: 0.88rem; font-weight: 700; color: #047857; display: flex; align-items: center; gap: 6px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        All Islandwide Delivery Zones: LKR 0 (Free)
+                    </div>
+                </div>
+
+                <div th:unless="${subtotal >= 10000}" style="margin: 18px 0; padding: 14px 16px; background: #FAF8F5; border: 1.5px solid #EAE4D9; border-radius: 12px;">
+                    <label style="font-size: 0.78rem; font-weight: 800; color: #4A3A2F; text-transform: uppercase; letter-spacing: 0.06em; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep, #9A7B38)" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                        Estimate Shipping Cost
+                    </label>
+                    <select id="shippingZoneSelect" onchange="updateShippingEstimate(this)" style="width: 100%; height: 40px; border-radius: 8px; border: 1.5px solid #E6DFD5; padding: 0 12px; font-size: 0.88rem; color: #2D241E; background: #FFFFFF; font-weight: 600; outline: none; cursor: pointer;">
+                        <option value="0">Free Standard Delivery (LKR 0)</option>
+                        <option value="350">Colombo &amp; Suburbs (LKR 350)</option>
+                        <option value="500">Western Province (LKR 500)</option>
+                        <option value="750">Outstation / Express Courier (LKR 750)</option>
+                    </select>
+                </div>
+
+                <div class="summary-row">
+                    <span>Delivery Charge</span>
+                    <span id="shippingDisplayVal" style="color: #10B981; font-weight: 700;">FREE</span>
+                </div>
+
+                <div class="summary-row total">
+                    <span>Total Payable</span>
+                    <input type="hidden" id="cartBaseTotalInput" th:value="${total != null ? total : 0}"/>
+                    <span id="grandTotalVal" style="color: #2D241E;" th:text="'LKR ' + ${#numbers.formatDecimal(total, 1, 'COMMA', 0, 'POINT')}">LKR 39,900</span>
+                </div>
+
+                <a href="/orders/checkout" class="checkout-btn">
+                    <span>PROCEED TO CHECKOUT &amp; PAY NOW</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </a>
+
+                <div class="guarantee-badges">
+                    <div class="guarantee-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        <span>256-Bit SSL Encrypted Checkout</span>
+                    </div>
+                    <div class="guarantee-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        <span>Authentic Instrument Warranty Included</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Promo Voucher Card -->
+            <div class="promo-box">
+                <div class="promo-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                    <span>Have a Promo Code?</span>
+                </div>
+
+                <div th:if="${offerError}" class="alert alert-error" style="margin-bottom: 12px; font-size: 0.85rem; padding: 10px 14px;" th:text="${offerError}">Error message</div>
+
+                <div th:if="${cart.appliedOfferCode}" class="applied-badge">
+                    <div>
+                        <strong th:text="${cart.appliedOfferCode}">WELCOME10</strong>
+                        <span style="font-size: 0.78rem; display: block;">Voucher applied</span>
+                    </div>
+                    <form th:action="@{/cart/remove-offer}" method="post">
+                        <button type="submit" style="background:none; border:none; color: #DC2626; font-weight:700; cursor:pointer; font-size:0.82rem;">Remove</button>
+                    </form>
+                </div>
+
+                <div th:if="${offerNotice}" class="alert" style="margin-top: 8px; margin-bottom: 8px; font-size: 0.8rem; padding: 8px 12px; background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E; border-radius: 8px; font-weight: 600;" th:text="${offerNotice}">Notice message</div>
+
+                <form th:unless="${cart.appliedOfferCode}" th:action="@{/cart/apply-offer}" method="post" class="promo-form">
+                    <input type="text" id="promoInputCode" name="code" class="promo-input" placeholder="e.g. WELCOME10" required/>
+                    <button type="submit" class="promo-btn">Apply</button>
+                </form>
+
+                <p style="margin-top: 10px; font-size: 0.82rem; margin-bottom: 0;">
+                    <a href="javascript:void(0)" onclick="toggleVoucherModal()" style="color: var(--gold-deep, #9A7B38); text-decoration: none; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                        <span>Browse active vouchers &rarr;</span>
+                    </a>
+                </p>
+
+                <!-- 1-Click Apply Quick Voucher List -->
+                <div th:if="${availableOffers != null and not #lists.isEmpty(availableOffers)}" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #EAE4D9;">
+                    <span style="font-size: 0.76rem; font-weight: 800; color: #9A7B38; text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 8px;">
+                        🏷️ Available Vouchers (1-Click Apply):
+                    </span>
+                    <div style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto;">
+                        <div th:each="off : ${availableOffers}" style="display: flex; align-items: center; justify-content: space-between; background: #FFFDF7; border: 1px dashed #D4AF37; border-radius: 10px; padding: 8px 12px;">
+                            <div style="flex: 1; padding-right: 6px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <strong style="font-family: monospace; font-size: 0.88rem; color: #9A7B38; background: rgba(212, 175, 55, 0.12); padding: 2px 6px; border-radius: 4px;" th:text="${off.code}">SAVE2000</strong>
+                                    <span th:if="${off.discountType != null and off.discountType.name() == 'PERCENTAGE'}" style="font-size: 0.72rem; font-weight: 800; color: #059669;" th:text="${#numbers.formatDecimal(off.discountValue, 1, 0)} + '% OFF'">10% OFF</span>
+                                    <span th:if="${off.discountType != null and off.discountType.name() == 'FIXED_AMOUNT'}" style="font-size: 0.72rem; font-weight: 800; color: #059669;" th:text="'LKR ' + ${#numbers.formatDecimal(off.discountValue, 1, 'COMMA', 0, 'POINT')} + ' OFF'">LKR 2,000 OFF</span>
+                                </div>
+                                <span style="font-size: 0.76rem; color: #6E6258; display: block; margin-top: 2px;" th:text="${off.description}">Voucher description</span>
+                            </div>
+                            <span th:if="${cart.appliedOfferCode != null and cart.appliedOfferCode.equalsIgnoreCase(off.code)}" style="background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; padding: 4px 8px; border-radius: 6px; font-weight: 800; font-size: 0.76rem; white-space: nowrap;">
+                                Applied ✓
+                            </span>
+                            <form th:unless="${cart.appliedOfferCode != null and cart.appliedOfferCode.equalsIgnoreCase(off.code)}" th:action="@{/cart/apply-offer}" method="post" style="margin: 0;">
+                                <input type="hidden" name="code" th:value="${off.code}"/>
+                                <button type="submit" style="background: linear-gradient(135deg, #2D241E 0%, #4A3A2F 100%); color: #DFB967; border: 1px solid #D4AF37; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.76rem; cursor: pointer; white-space: nowrap;" title="Apply Voucher">
+                                    Apply ⚡
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Empty Cart State -->
+    <div th:if="${#lists.isEmpty(cart.items)}" style="text-align: center; padding: 70px 20px; background: #FFFFFF; border-radius: 20px; border: 1px solid #EAE4D9; max-width: 620px; margin: 0 auto;">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--gold-deep, #9A7B38)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 20px;">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        <h3 style="font-family: var(--font-display); font-size: 1.6rem; color: #2D241E; margin-bottom: 10px;">Your Shopping Cart is Empty</h3>
+        <p style="color: #6E6258; max-width: 440px; margin: 0 auto 28px; font-size: 0.95rem; line-height: 1.6;">
+            Explore our curated boutique collection of acoustic guitars, digital pianos, drum kits, and premium accessories.
+        </p>
+        <a href="/products" class="checkout-btn" style="display: inline-flex; width: auto; padding: 14px 28px;">
+            <span>Explore Catalog</span>
+        </a>
+    </div>
+</div>
+
+<script>
+    function getRawBaseTotal() {
+        const input = document.getElementById('cartBaseTotalInput');
+        return input ? parseFloat(input.value || 0) : 0;
+    }
+
+    function stepQuantity(btn, amount) {
+        const form = btn.closest('form');
+        const input = form.querySelector('.stepper-input');
+        let current = parseInt(input.value) || 1;
+        let maxAttr = input.getAttribute('max');
+        let max = maxAttr ? parseInt(maxAttr) : 99;
+        let next = current + amount;
+        
+        if (amount > 0 && current >= max) {
+            showStockToast('⚠️ Maximum stock limit reached: Only ' + max + ' units available.');
+            return;
+        }
+
+        if (next >= 1 && next <= max) {
+            input.value = next;
+            form.submit();
+        }
+    }
+
+    function validateAndSubmit(input) {
+        let current = parseInt(input.value) || 1;
+        let maxAttr = input.getAttribute('max');
+        let max = maxAttr ? parseInt(maxAttr) : 99;
+        if (current > max) {
+            showStockToast('⚠️ Quantity adjusted to available stock limit (' + max + ').');
+            input.value = max;
+        } else if (current < 1) {
+            input.value = 1;
+        }
+        input.form.submit();
+    }
+
+    function showStockToast(msg) {
+        let toast = document.getElementById('stockToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'stockToast';
+            toast.style.cssText = 'position: fixed; bottom: 30px; right: 30px; background: #1C130D; color: #DFB967; padding: 14px 22px; border-radius: 12px; border: 1px solid #DFB967; font-weight: 700; font-size: 0.88rem; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 10000; transition: all 0.3s ease; opacity: 0; transform: translateY(20px);';
+            document.body.appendChild(toast);
+        }
+        toast.innerText = msg;
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(20px)';
+        }, 3500);
+    }
+
+    function updateShippingEstimate(select) {
+        const cost = parseInt(select.value) || 0;
+        const display = document.getElementById('shippingDisplayVal');
+        const grandTotalDisplay = document.getElementById('grandTotalVal');
+
+        if (cost === 0) {
+            display.innerText = 'FREE';
+            display.style.color = '#10B981';
+        } else {
+            display.innerText = 'LKR ' + cost.toLocaleString('en-US');
+            display.style.color = '#2D241E';
+        }
+
+        const baseTotal = getRawBaseTotal();
+        const grandTotal = baseTotal + cost;
+        if (grandTotalDisplay) {
+            grandTotalDisplay.innerText = 'LKR ' + Math.round(grandTotal).toLocaleString('en-US');
+        }
+    }
+
+    function toggleVoucherModal() {
+        const modal = document.getElementById('voucherBrowseModal');
+        if (modal) {
+            const isHidden = modal.style.display === 'none' || modal.style.display === '';
+            modal.style.display = isHidden ? 'flex' : 'none';
+            document.body.style.overflow = isHidden ? 'hidden' : '';
+        }
+    }
+
+    function showClearCartConfirm() {
+        const btn = document.getElementById('clearCartTriggerBtn');
+        const form = document.getElementById('clearCartForm');
+        if (btn && form) {
+            btn.style.display = 'none';
+            form.style.display = 'inline-flex';
+        }
+    }
+
+    function hideClearCartConfirm() {
+        const btn = document.getElementById('clearCartTriggerBtn');
+        const form = document.getElementById('clearCartForm');
+        if (btn && form) {
+            form.style.display = 'none';
+            btn.style.display = 'inline-flex';
+        }
+    }
+</script>
+
+<!-- Browse Active Vouchers Popup Modal -->
+<div id="voucherBrowseModal" style="display: none; position: fixed; inset: 0; background: rgba(30, 22, 16, 0.65); backdrop-filter: blur(5px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: #FFFFFF; border-radius: 20px; max-width: 520px; width: 100%; border: 1px solid #EAE4D9; box-shadow: 0 20px 50px rgba(0,0,0,0.25); overflow: hidden;">
+        <div style="background: #FAF8F5; padding: 20px 24px; border-bottom: 1px solid #EAE4D9; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: #FFFDF7; border: 1px solid #D4AF37; color: #9A7B38; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                    🎁
+                </div>
+                <div>
+                    <h3 style="font-family: var(--font-display, serif); font-size: 1.2rem; font-weight: 700; color: #2D241E; margin: 0;">Active Store Vouchers &amp; Offers</h3>
+                    <span style="font-size: 0.78rem; color: #7C6D5D;">1-Click Apply Promo Codes to Your Shopping Cart</span>
+                </div>
+            </div>
+            <button type="button" onclick="toggleVoucherModal()" style="background: transparent; border: none; font-size: 1.5rem; color: #7C6D5D; cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+
+        <div style="padding: 24px; max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;">
+            <div th:each="v : ${availableOffers}" style="background: #FFFDF7; border: 1.5px dashed #D4AF37; border-radius: 14px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <strong style="font-family: monospace; font-size: 1rem; color: #9A7B38; background: rgba(212, 175, 55, 0.15); padding: 3px 8px; border-radius: 6px;" th:text="${v.code}">CODE</strong>
+                        <span th:if="${v.minOrderAmount != null and v.minOrderAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0}" style="font-size: 0.75rem; color: #7C6D5D;" th:text="'Min LKR ' + ${#numbers.formatDecimal(v.minOrderAmount, 1, 'COMMA', 0, 'POINT')}">Min LKR 5,000</span>
+                    </div>
+                    <div style="font-size: 0.88rem; font-weight: 700; color: #2D241E;" th:text="${v.description}">Voucher Description</div>
+                </div>
+                <form th:action="@{/cart/apply-offer}" method="post" style="margin: 0;">
+                    <input type="hidden" name="code" th:value="${v.code}"/>
+                    <button type="submit" style="background: linear-gradient(135deg, #DFB967 0%, #C29A38 100%); color: #1F1610; border: none; padding: 8px 18px; border-radius: 999px; font-weight: 800; font-size: 0.84rem; cursor: pointer; box-shadow: 0 4px 12px rgba(194, 154, 56, 0.3);">
+                        Claim &amp; Apply ⚡
+                    </button>
+                </form>
+            </div>
+            <div th:if="${availableOffers == null or #lists.isEmpty(availableOffers)}" style="text-align: center; color: #7C6D5D; padding: 20px;">
+                No active promotional vouchers currently available.
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
+</html>
+
